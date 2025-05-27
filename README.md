@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Version: 1.0 - 2025-05-26 - Initial creation.
 # Hospital IT Inventory & Request Management System v1.0
 
@@ -119,3 +120,6 @@ hospital_inventory/
 
 *   Project Version: v1.0
 *   Individual file versions are noted at brisket of each relevant file (e.g., `# Version: 1.0 - YYYY-MM-DD - Initial creation.`).
+=======
+# hospital_inventory_project
+>>>>>>> 7528e9ac9593560c68b93d21c6e8b5e621b759ca
