@@ -1,37 +1,35 @@
 {% extends "core/base.html" %}
 {% load static i18n %}
 
-{% block title %}
-    {{ page_title|default:_("აიტი მოთხოვნები (ადმინი)") }} - {{ block.super }}
-{% endblock title %}
+{# Override the full page title for the browser tab #}
+{% block page_title_full %}{{ page_title|default:_("All IT Requests (Admin)") }} - {{ block.super }}{% endblock page_title_full %}
+
+{# Populate the page_header_title block from base.html #}
+{% block page_header_title %}
+    {{ page_title|default:_("All IT Requests") }}
+{% endblock page_header_title %}
+
+{# Add "Add New Request" button to the page_actions block in base.html's header #}
+{% block page_action_buttons %}
+    {% if perms.requests_app.add_request %}
+        <a href="{% url 'requests_app:request_create' %}" class="btn btn-primary">
+            <i class="ti ti-plus me-1"></i>
+            {% trans "Add New Request" %}
+        </a>
+    {% endif %}
+{% endblock page_action_buttons %}
 
 {% block content %}
-<div class="container mt-4 mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>
-            {% if page_title %}
-                {{ page_title }}
-            {% else %}
-                ყველა მოთხოვნა
-            {% endif %}
-        </h1>
-        {% if perms.requests_app.add_request %} {# Added permission check #}
-            <a href="{% url 'requests_app:request_create' %}" class="btn btn-primary">
-                <i class="fas fa-plus-circle me-1"></i>ახალი მოთხოვნის დამატება
-            </a>
-        {% endif %}
-    </div>
-
-    <form method="get" class="mb-4 p-3 border rounded bg-light">
-        <div class="row g-3 align-items-end">
+    <div class="card card-body mb-4">
+        <form method="get" class="row g-3 align-items-end">
             <div class="col-md-3">
-                <label for="search_query" class="form-label">ძიება</label>
-                <input type="search" name="q" id="search_query" class="form-control" placeholder="ID, თემა, მომთხოვნი..." value="{{ request.GET.q }}"> {# Changed type to search #}
+                <label for="search_query" class="form-label">{% trans "Search" %}</label>
+                <input type="search" name="q" id="search_query" class="form-control" placeholder="{% trans "ID, Subject, Requester..." %}" value="{{ request.GET.q }}">
             </div>
             <div class="col-md-2">
-                <label for="status_filter" class="form-label">სტატუსი</label>
+                <label for="status_filter" class="form-label">{% trans "Status" %}</label>
                 <select name="status" id="status_filter" class="form-select">
-                    <option value="">ყველა სტატუსი</option>
+                    <option value="">{% trans "All Statuses" %}</option>
                     {% for status_val, status_display in status_choices_for_filter %}
                         <option value="{{ status_val }}" {% if request.GET.status == status_val %}selected{% endif %}>
                             {{ status_display }}
@@ -40,9 +38,9 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label for="type_filter" class="form-label">ტიპი</label>
+                <label for="type_filter" class="form-label">{% trans "Type" %}</label>
                 <select name="type" id="type_filter" class="form-select">
-                    <option value="">ყველა ტიპი</option>
+                    <option value="">{% trans "All Types" %}</option>
                     {% for type_obj in types_for_filter %}
                         <option value="{{ type_obj.pk }}" {% if request.GET.type == type_obj.pk|stringformat:"s" %}selected{% endif %}>
                             {{ type_obj.name }}
@@ -50,151 +48,172 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
-                <label for="assigned_to_filter" class="form-label">მიმნიჭებული</label>
+            <div class="col-md-2">
+                <label for="assigned_to_filter" class="form-label">{% trans "Assigned To" %}</label>
                 <select name="assigned_to" id="assigned_to_filter" class="form-select">
-                    <option value="">ყველა</option>
+                    <option value="">{% trans "Anyone" %}</option>
                     {% for staff_user in staff_users_for_filter %}
                         <option value="{{ staff_user.pk }}" {% if request.GET.assigned_to == staff_user.pk|stringformat:"s" %}selected{% endif %}>
                             {{ staff_user.get_full_name|default:staff_user.username }}
                         </option>
                     {% endfor %}
-                     <option value="unassigned" {% if request.GET.assigned_to == "unassigned" %}selected{% endif %}>არ არის მინიჭებული</option>
+                     <option value="unassigned" {% if request.GET.assigned_to == "unassigned" %}selected{% endif %}>{% trans "Unassigned" %}</option>
                 </select>
             </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-success w-100">გაფილტვრა</button>
+            <div class="col-md-auto">
+                <button type="submit" class="btn btn-success w-100">
+                    <i class="ti ti-filter me-1"></i> {% trans "Filter" %}
+                </button>
             </div>
              {% if request.GET.q or request.GET.status or request.GET.type or request.GET.assigned_to %}
-            <div class="col-md-2">
-                 <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-outline-secondary w-100">გასუფთავება</a>
+            <div class="col-md-auto">
+                 <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-outline-secondary w-100">
+                    <i class="ti ti-clear-all me-1"></i> {% trans "Clear" %}
+                 </a>
             </div>
             {% endif %}
-        </div>
-    </form>
+        </form>
+    </div>
 
-    {% if messages %}
-        <div>
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-3" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="დახურვა"></button>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
+    {# Messages are handled by base.html #}
 
     {% if requests %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th class="border-bottom border-2">ID</th>
-                        <th class="border-bottom border-2">თემა</th>
-                        <th class="border-bottom border-2">ტიპი</th>
-                        <th class="border-bottom border-2">მომთხოვნი</th>
-                        <th class="border-bottom border-2">სტატუსი</th>
-                        <th class="border-bottom border-2">დამატების დრო</th>
-                        <th class="border-bottom border-2">მიმნიჭებული</th>
-                        <th class="border-bottom border-2">ქმედებები</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for request_obj in requests %}
-                    <tr class="align-middle">
-                        <td class="border-bottom">#{{ request_obj.id }}</td>
-                        <td class="border-bottom">
-                            <a href="{% url 'requests_app:request_detail' pk=request_obj.pk %}">
-                                {{ request_obj.subject|truncatewords:10 }}
-                            </a>
-                        </td>
-                        <td class="border-bottom">{{ request_obj.request_type.name|default:"-" }}</td>
-                        <td class="border-bottom">{{ request_obj.requested_by.get_full_name|default:request_obj.requested_by.username }}</td>
-                        <td class="border-bottom">
-                            {% if request_obj.status == 'new' %}
-                                <span class="badge bg-primary">ახალი</span>
-                            {% elif request_obj.status == 'in_progress' %}
-                                <span class="badge bg-info text-dark">მუშავდება</span>
-                            {% elif request_obj.status == 'on_hold' %}
-                                <span class="badge bg-warning text-dark">შეჩერებული</span>
-                            {% elif request_obj.status == 'resolved' %}
-                                <span class="badge bg-success">დასრულებული</span>
-                            {% elif request_obj.status == 'closed' %}
-                                <span class="badge bg-secondary">დახურული</span>
-                            {% elif request_obj.status == 'cancelled' %}
-                                <span class="badge bg-danger">გაუქმებული</span>
-                            {% else %}
-                                <span class="badge bg-light text-dark">{{ request_obj.get_status_display }}</span>
-                            {% endif %}
-                        </td>
-                        <td class="border-bottom">{{ request_obj.created_at|date:"Y-m-d H:i" }}</td>
-                        <td class="border-bottom">{{ request_obj.assigned_to.get_full_name|default:"არ არის მინიჭებული" }}</td>
-                        <td class="border-bottom">
-                            <a href="{% url 'requests_app:request_detail' pk=request_obj.pk %}" class="btn btn-sm btn-outline-primary mb-1 me-1" title="დეტალების ნახვა">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            {% if user.is_staff and request_obj.status != 'closed' and request_obj.status != 'resolved' and request_obj.status != 'cancelled' %}
-                            <a href="{% url 'requests_app:request_edit' pk=request_obj.pk %}" class="btn btn-sm btn-outline-secondary mb-1 me-1" title="მოთხოვნის რედაქტირება">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>{% trans "ID" %}</th>
+                            <th>{% trans "Subject" %}</th>
+                            <th>{% trans "Type" %}</th>
+                            <th>{% trans "Requester" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th>{% trans "Created" %}</th>
+                            <th>{% trans "Assigned To" %}</th>
+                            <th class="w-1">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request_obj in requests %}
+                        <tr>
+                            <td><a href="{% url 'requests_app:request_detail' pk=request_obj.pk %}">#{{ request_obj.id }}</a></td>
+                            <td>
+                                <a href="{% url 'requests_app:request_detail' pk=request_obj.pk %}">
+                                    {{ request_obj.subject|truncatewords:8 }}
+                                </a>
+                            </td>
+                            <td>{{ request_obj.request_type.name|default:"-" }}</td>
+                            <td>{{ request_obj.requested_by.get_full_name|default:request_obj.requested_by.username }}</td>
+                            <td>
+                                {% if request_obj.status == 'new' %}
+                                    <span class="badge bg-primary-lt">{% trans "New" %}</span>
+                                {% elif request_obj.status == 'in_progress' %}
+                                    <span class="badge bg-info-lt">{% trans "In Progress" %}</span>
+                                {% elif request_obj.status == 'on_hold' %}
+                                    <span class="badge bg-warning-lt">{% trans "On Hold" %}</span>
+                                {% elif request_obj.status == 'resolved' %}
+                                    <span class="badge bg-success-lt">{% trans "Resolved" %}</span>
+                                {% elif request_obj.status == 'closed' %}
+                                    <span class="badge bg-secondary-lt">{% trans "Closed" %}</span>
+                                {% elif request_obj.status == 'cancelled' %}
+                                    <span class="badge bg-danger-lt">{% trans "Cancelled" %}</span>
+                                {% else %}
+                                    <span class="badge bg-dark-lt">{{ request_obj.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ request_obj.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>{{ request_obj.assigned_to.get_full_name|default:_("Unassigned") }}</td>
+                            <td>
+                                <div class="btn-list flex-nowrap">
+                                    <a href="{% url 'requests_app:request_detail' pk=request_obj.pk %}" class="btn btn-sm btn-outline-primary" title="{% trans "View Details" %}">
+                                        <i class="ti ti-eye"></i>
+                                    </a>
+                                    {# Assuming staff can edit, and edit link depends on status #}
+                                    {% if user.is_staff and request_obj.status != 'closed' and request_obj.status != 'resolved' and request_obj.status != 'cancelled' %}
+                                    <a href="{% url 'requests_app:request_edit' pk=request_obj.pk %}" class="btn btn-sm btn-outline-secondary" title="{% trans "Edit Request" %}">
+                                        <i class="ti ti-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
 
-        {% if is_paginated %}
-        <nav aria-label="Page navigation" class="mt-3">
-            <ul class="pagination justify-content-center mb-0">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="პირველი">
-                            <span aria-hidden="true">&laquo;&laquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="წინა">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-                {% endif %}
-                {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                        <li class="page-item active" aria-current="page"><span class="page-link">{{ num }}</span></li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <li class="page-item"><a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a></li>
-                    {% endif %}
-                {% endfor %}
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="შემდეგი">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="ბოლო">
-                            <span aria-hidden="true">&raquo;&raquo;</span>
-                        </a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
-    {% else %}
-        <div class="alert alert-info text-center mt-3" role="alert">
-            <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
-            {% if request.GET.q or request.GET.status or request.GET.type or request.GET.assigned_to %}
-                <p class="lead">მოთხოვნები მითითებული კრიტერიუმებით ვერ მოიძებნა. <a href="{% url 'requests_app:admin_request_list' %}">ფილტრების გასუფთავება</a>.</p>
-            {% else %}
-                 <p class="lead">ამ ეტაპზე მოთხოვნები არ მოიძებნა.</p>
+            {% if is_paginated %}
+                <div class="card-footer d-flex align-items-center">
+                    <p class="m-0 text-muted">
+                        {% blocktrans with page_obj.start_index as start_index and page_obj.end_index as end_index and page_obj.paginator.count as total_count %}
+                        Showing <span>{{ start_index }}</span> to <span>{{ end_index }}</span> of <span>{{ total_count }}</span> entries
+                        {% endblocktrans %}
+                    </p>
+                    <ul class="pagination m-0 ms-auto">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="ti ti-chevrons-left"></i> {% trans "First" %}
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="ti ti-chevron-left"></i> {% trans "Prev" %}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true"><i class="ti ti-chevrons-left"></i> {% trans "First" %}</a></li>
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true"><i class="ti ti-chevron-left"></i> {% trans "Prev" %}</a></li>
+                        {% endif %}
+                        
+                        <li class="page-item active" aria-current="page"><a class="page-link" href="#">{{ page_obj.number }}</a></li>
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    {% trans "Next" %} <i class="ti ti-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    {% trans "Last" %} <i class="ti ti-chevrons-right"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">{% trans "Next" %} <i class="ti ti-chevron-right"></i></a></li>
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">{% trans "Last" %} <i class="ti ti-chevrons-right"></i></a></li>
+                        {% endif %}
+                    </ul>
+                </div>
             {% endif %}
-            {# Assumed permission is 'requests_app.add_request'. Change if different. #}
-            {% if perms.requests_app.add_request and not request.GET.q and not request.GET.status and not request.GET.type and not request.GET.assigned_to %}
-            <p>ახალი მოთხოვნის დამატება შეგიძლიათ ზემოთ ღილაკით.</p>
+        </div>
+    {% else %}
+        <div class="empty">
+            <div class="empty-icon">
+                <i class="ti ti-mood-empty icon"></i>
+            </div>
+            <p class="empty-title">
+                {% if request.GET.q or request.GET.status or request.GET.type or request.GET.assigned_to %}
+                    {% trans "No IT requests found matching your criteria." %}
+                {% else %}
+                    {% trans "No IT requests found." %}
+                {% endif %}
+            </p>
+            {% if request.GET.q or request.GET.status or request.GET.type or request.GET.assigned_to %}
+                <p class="empty-subtitle text-muted">
+                    {% trans "Try adjusting your search or filter terms, or" %} <a href="{% url 'requests_app:admin_request_list' %}">{% trans "clear filters" %}</a>.
+                </p>
+            {% endif %}
+            {% if perms.requests_app.add_request %}
+                {% if not request.GET.q and not request.GET.status and not request.GET.type and not request.GET.assigned_to %}
+                <div class="empty-action">
+                    <a href="{% url 'requests_app:request_create' %}" class="btn btn-primary">
+                        <i class="ti ti-plus me-1"></i>
+                        {% trans "Add New Request" %}
+                    </a>
+                </div>
+                {% endif %}
             {% endif %}
         </div>
     {% endif %}
-</div>
 {% endblock content %}

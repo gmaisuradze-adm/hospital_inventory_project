@@ -1,29 +1,35 @@
 {% extends "core/base.html" %}
 {% load static i18n %}
 
-{% block title %}{{ page_title|default:"ინვენტარის სია" }} - საავადმყოფოს IT ინვენტარი{% endblock title %}
+{# Override the full page title for the browser tab #}
+{% block page_title_full %}{% trans "Equipment Inventory" %} - {{ block.super }}{% endblock page_title_full %}
+
+{# Populate the page_header_title block from base.html #}
+{% block page_header_title %}
+    {% trans "Equipment Inventory" %}
+{% endblock page_header_title %}
+
+{# Add "Add New Equipment" button to the page_actions block in base.html's header #}
+{% block page_action_buttons %}
+    {% if perms.inventory.add_equipment %}
+        <a href="{% url 'inventory:equipment_create' %}" class="btn btn-primary">
+            <i class="ti ti-plus me-1"></i> <!-- Tabler Icon -->
+            {% trans "Add New Equipment" %}
+        </a>
+    {% endif %}
+{% endblock page_action_buttons %}
 
 {% block content %}
-<div class="container mt-4 mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>{{ page_title|default:"ინვენტარის სია" }}</h1>
-        {% if perms.inventory.add_equipment %}
-            <a href="{% url 'inventory:equipment_create' %}" class="btn btn-primary">
-                <i class="fas fa-plus-circle me-1"></i> ახალი მოწყობილობის დამატება
-            </a>
-        {% endif %}
-    </div>
-
-    <form method="get" class="mb-4 p-3 border rounded bg-light">
-        <div class="row g-3 align-items-end">
-            <div class="col-md-4">
-                <label for="search_query" class="form-label">ძიება</label>
-                <input type="search" name="q" id="search_query" class="form-control" placeholder="ტეგი, სახელი..." value="{{ request.GET.q }}"> {# Changed type to search #}
+    <div class="card card-body mb-4">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="search_query" class="form-label">{% trans "Search" %}</label>
+                <input type="search" name="q" id="search_query" class="form-control" placeholder="{% trans "Asset tag, name..." %}" value="{{ request.GET.q }}">
             </div>
             <div class="col-md-3">
-                <label for="category_filter" class="form-label">კატეგორია</label>
+                <label for="category_filter" class="form-label">{% trans "Category" %}</label>
                 <select name="category" id="category_filter" class="form-select">
-                    <option value="">ყველა კატეგორია</option>
+                    <option value="">{% trans "All Categories" %}</option>
                     {% for category in categories_for_filter %}
                         <option value="{{ category.pk }}" {% if request.GET.category == category.pk|stringformat:"s" %}selected{% endif %}>
                             {{ category.name }}
@@ -32,113 +38,163 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label for="status_filter" class="form-label">სტატუსი</label>
+                <label for="status_filter" class="form-label">{% trans "Status" %}</label>
                 <select name="status" id="status_filter" class="form-select">
-                    <option value="">ყველა სტატუსი</option>
-                    {% for status in statuses_for_filter %}
-                        <option value="{{ status.pk }}" {% if request.GET.status == status.pk|stringformat:"s" %}selected{% endif %}>
-                            {{ status.name }}
+                    <option value="">{% trans "All Statuses" %}</option>
+                    {% for status_obj in statuses_for_filter %}
+                        <option value="{{ status_obj.pk }}" {% if request.GET.status == status_obj.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ status_obj.name }}
                         </option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-success w-100">გაფილტვრა</button>
+            <div class="col-md-auto">
+                <button type="submit" class="btn btn-success w-100">
+                    <i class="ti ti-filter me-1"></i> {% trans "Filter" %}
+                </button>
             </div>
             {% if request.GET.q or request.GET.category or request.GET.status %}
-            <div class="col-md-2">
-                 <a href="{% url 'inventory:equipment_list' %}" class="btn btn-outline-secondary w-100">გასუფთავება</a>
+            <div class="col-md-auto">
+                 <a href="{% url 'inventory:equipment_list' %}" class="btn btn-outline-secondary w-100">
+                    <i class="ti ti-clear-all me-1"></i> {% trans "Clear" %}
+                 </a>
             </div>
             {% endif %}
-        </div>
-    </form>
-
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-3" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
+        </form>
+    </div>
 
     {% if equipment_list %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th class="border-bottom border-2">ინვენტარის ტეგი</th>
-                        <th class="border-bottom border-2">სახელი</th>
-                        <th class="border-bottom border-2">კატეგორია</th>
-                        <th class="border-bottom border-2">სტატუსი</th>
-                        <th class="border-bottom border-2">ლოკაცია</th>
-                        <th class="border-bottom border-2">მინიჭებული</th>
-                        <th class="border-bottom border-2">ქმედებები</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in equipment_list %}
-                    <tr class="align-middle">
-                        <td class="border-bottom">
-                            <a href="{% url 'inventory:equipment_detail' item.pk %}">{{ item.asset_tag|default:"მიუწვდომელია" }}</a>
-                        </td>
-                        <td class="border-bottom">{{ item.name }}</td>
-                        <td class="border-bottom">{{ item.category.name|default:"მიუწვდომელია" }}</td>
-                        <td class="border-bottom">
-                            <span class="badge 
-                                {% if item.status.name == 'In Use' %}bg-success
-                                {% elif item.status.name == 'Under Repair' %}bg-warning text-dark
-                                {% elif item.status.name == 'In Storage' %}bg-info text-dark
-                                {% elif item.status.name == 'Decommissioned' %}bg-danger
-                                {% else %}bg-secondary{% endif %}">
-                                {{ item.status.name|default:"მიუწვდომელია" }}
-                            </span>
-                        </td>
-                        <td class="border-bottom">{{ item.current_location.name|default:"მიუწვდომელია" }}</td>
-                        <td class="border-bottom">{{ item.assigned_to.username|default:"მინიჭებული არ არის" }}</td>
-                        <td class="border-bottom">
-                            <a href="{% url 'inventory:equipment_detail' item.pk %}" class="btn btn-sm btn-outline-primary mb-1 me-1" title="ნახვა"><i class="fas fa-eye"></i></a>
-                            {% if perms.inventory.change_equipment %}
-                                <a href="{% url 'inventory:equipment_update' item.pk %}" class="btn btn-sm btn-outline-secondary mb-1 me-1" title="რედაქტირება"><i class="fas fa-edit"></i></a>
-                            {% endif %}
-                            {% if perms.inventory.delete_equipment %}
-                                <a href="{% url 'inventory:equipment_delete' item.pk %}" class="btn btn-sm btn-outline-danger mb-1" title="წაშლა"><i class="fas fa-trash-alt"></i></a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Asset Tag" %}</th>
+                            <th>{% trans "Name" %}</th>
+                            <th>{% trans "Category" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th>{% trans "Location" %}</th>
+                            <th>{% trans "Assigned To" %}</th>
+                            <th class="w-1">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in equipment_list %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'inventory:equipment_detail' item.pk %}">{{ item.asset_tag|default:"N/A" }}</a>
+                            </td>
+                            <td data-label="{% trans "Name" %}">{{ item.name }}</td>
+                            <td data-label="{% trans "Category" %}">{{ item.category.name|default:"N/A" }}</td>
+                            <td data-label="{% trans "Status" %}">
+                                <span class="badge 
+                                    {% if item.status.name == 'In Use' %}bg-success-lt
+                                    {% elif item.status.name == 'Under Repair' %}bg-warning-lt
+                                    {% elif item.status.name == 'In Storage' %}bg-info-lt
+                                    {% elif item.status.name == 'Decommissioned' %}bg-danger-lt
+                                    {% elif item.status.name == 'To Be Written Off' %}bg-orange-lt
+                                    {% else %}bg-secondary-lt{% endif %}">
+                                    {{ item.status.name|default:"N/A" }}
+                                </span>
+                            </td>
+                            <td data-label="{% trans "Location" %}">{{ item.current_location.name|default:"N/A" }}</td>
+                            <td data-label="{% trans "Assigned To" %}">{{ item.assigned_to.username|default:"-" }}</td>
+                            <td>
+                                <div class="btn-list flex-nowrap">
+                                    <a href="{% url 'inventory:equipment_detail' item.pk %}" class="btn btn-sm btn-outline-primary" title="{% trans "View" %}">
+                                        <i class="ti ti-eye"></i>
+                                    </a>
+                                    {% if perms.inventory.change_equipment %}
+                                        <a href="{% url 'inventory:equipment_update' item.pk %}" class="btn btn-sm btn-outline-secondary" title="{% trans "Edit" %}">
+                                            <i class="ti ti-edit"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if perms.inventory.delete_equipment %}
+                                        <a href="{% url 'inventory:equipment_delete' item.pk %}" class="btn btn-sm btn-outline-danger" title="{% trans "Delete" %}">
+                                            <i class="ti ti-trash"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if is_paginated %}
+                <div class="card-footer d-flex align-items-center">
+                    <p class="m-0 text-muted">
+                        {% blocktrans with page_obj.start_index as start_index and page_obj.end_index as end_index and page_obj.paginator.count as total_count %}
+                        Showing <span>{{ start_index }}</span> to <span>{{ end_index }}</span> of <span>{{ total_count }}</span> entries
+                        {% endblocktrans %}
+                    </p>
+                    <ul class="pagination m-0 ms-auto">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="ti ti-chevrons-left"></i> {% trans "First" %}
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="ti ti-chevron-left"></i> {% trans "Prev" %}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true"><i class="ti ti-chevrons-left"></i> {% trans "First" %}</a></li>
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true"><i class="ti ti-chevron-left"></i> {% trans "Prev" %}</a></li>
+                        {% endif %}
+                        
+                        <li class="page-item active" aria-current="page"><a class="page-link" href="#">{{ page_obj.number }}</a></li>
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    {% trans "Next" %} <i class="ti ti-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    {% trans "Last" %} <i class="ti ti-chevrons-right"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">{% trans "Next" %} <i class="ti ti-chevron-right"></i></a></li>
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">{% trans "Last" %} <i class="ti ti-chevrons-right"></i></a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% endif %}
         </div>
-
-        {% if is_paginated %}
-            <nav aria-label="გვერდების გადართვა" class="mt-3">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                        <li class="page-item"><a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&laquo; პირველი</a></li>
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">წინა</a></li>
-                    {% endif %}
-                    <li class="page-item disabled"><a class="page-link" href="#">გვერდი {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</a></li>
-                    {% if page_obj.has_next %}
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">შემდეგი</a></li>
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">ბოლო &raquo;</a></li>
-                    {% endif %}
-                </ul>
-            </nav>
-        {% endif %}
     {% else %}
-        <div class="alert alert-info text-center mt-3" role="alert"> {# Added text-center for consistency #}
-            <i class="fas fa-info-circle fa-3x text-muted mb-3"></i> {# Added icon for consistency #}
+        <div class="empty">
+            <div class="empty-icon">
+                <i class="ti ti-mood-empty icon"></i>
+            </div>
+            <p class="empty-title">
+                {% if request.GET.q or request.GET.category or request.GET.status %}
+                    {% trans "No equipment found matching your criteria." %}
+                {% else %}
+                    {% trans "No equipment items found." %}
+                {% endif %}
+            </p>
             {% if request.GET.q or request.GET.category or request.GET.status %}
-                <p class="lead">მოწყობილობები მითითებული კრიტერიუმებით ვერ მოიძებნა. <a href="{% url 'inventory:equipment_list' %}">ფილტრების გასუფთავება</a>.</p> {# Wrapped in p.lead #}
-            {% else %}
-                <p class="lead">მოწყობილობები ვერ მოიძებნა.</p> {# Wrapped in p.lead #}
+                <p class="empty-subtitle text-muted">
+                    {% trans "Try adjusting your search or filter terms, or" %} <a href="{% url 'inventory:equipment_list' %}">{% trans "clear filters" %}</a>.
+                </p>
             {% endif %}
-            {% if perms.inventory.add_equipment and not request.GET.q and not request.GET.category and not request.GET.status %}
-                <p>შეგიძლიათ <a href="{% url 'inventory:equipment_create' %}">დაამატოთ ახალი მოწყობილობა</a>.</p> {# Wrapped in p, removed <br> #}
+            {# --- MODIFIED IF CONDITION HERE --- #}
+            {% if perms.inventory.add_equipment %}
+                {% if not request.GET.q and not request.GET.category and not request.GET.status %}
+                <div class="empty-action">
+                    <a href="{% url 'inventory:equipment_create' %}" class="btn btn-primary">
+                        <i class="ti ti-plus me-1"></i>
+                        {% trans "Add New Equipment" %}
+                    </a>
+                </div>
+                {% endif %}
             {% endif %}
+            {# --- END OF MODIFIED IF CONDITION --- #}
         </div>
     {% endif %}
-    {# REMOVED: Return to Dashboard button #}
-</div>
 {% endblock content %}

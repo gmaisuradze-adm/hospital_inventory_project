@@ -1,94 +1,113 @@
 {% extends "core/base.html" %}
-{% load i18n %}
-{% load static %}
+{% load static i18n %}
 
-{# Version: 1.0 - 2025-05-26 - Template for StockItem detail view. #}
-{# User: gmaisuradze-adm #}
+{% block page_title_prefix %}
+    {{ item.name|default:_("მარაგის ელემენტი") }} -
+{% endblock page_title_prefix %}
 
-{% block title %}{{ page_title|default:"მარაგის ელემენტის დეტალები" }} - საავადმყოფოს IT ინვენტარი{% endblock title %}
+{% block page_header_title %}
+    {{ item.name|default:_("მარაგის ელემენტი") }}
+{% endblock page_header_title %}
+
+{% block page_actions %}
+    <a href="{% url 'warehouse:stockitem_list' %}" class="btn btn-outline-secondary">
+        <i class="ti ti-arrow-left me-1"></i> დაბრუნება სიაში
+    </a>
+    {% if perms.warehouse.change_stockitem %}
+    <a href="{% url 'warehouse:stockitem_edit' item.pk %}" class="btn btn-primary">
+        <i class="ti ti-edit me-1"></i> რედაქტირება
+    </a>
+    {% endif %}
+    {% if perms.warehouse.delete_stockitem %}
+    <a href="{% url 'warehouse:stockitem_delete' item.pk %}" class="btn btn-danger">
+        <i class="ti ti-trash me-1"></i> წაშლა
+    </a>
+    {% endif %}
+{% endblock page_actions %}
 
 {% block content %}
-<div class="container mt-4 mb-5">
-    <div class="row">
-        <div class="col-md-10 col-lg-8 mx-auto">
-            <div class="card shadow-sm">
-                <div class="card-header bg-info text-white">
-                    <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>{{ page_title }}</h4>
+<div class="row row-cards justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="card-title mb-0">
+                        <i class="ti ti-package"></i> ელემენტის დეტალები
+                    </h3>
                 </div>
-                <div class="card-body">
-                    <dl class="row">
-                        <dt class="col-sm-4">ელემენტის ID / SKU:</dt>
-                        <dd class="col-sm-8">{{ item.item_id }}</dd>
-
-                        <dt class="col-sm-4">დასახელება:</dt>
-                        <dd class="col-sm-8">{{ item.name }}</dd>
-
-                        <dt class="col-sm-4">აღწერა:</dt>
-                        <dd class="col-sm-8">{{ item.description|linebreaksbr|default:"მიუწვდომელია" }}</dd>
-
-                        <dt class="col-sm-4">კატეგორია:</dt>
-                        <dd class="col-sm-8">{{ item.category.name|default:"მიუწვდომელია" }}</dd>
-
-                        <dt class="col-sm-4">მომწოდებელი:</dt>
-                        <dd class="col-sm-8">{{ item.supplier.name|default:"მიუწვდომელია" }}</dd>
-
-                        <hr class="my-3">
-
-                        <dt class="col-sm-4">მარაგში რაოდენობა:</dt>
-                        <dd class="col-sm-8">{{ item.quantity_on_hand }}
-                            {% if item.is_below_minimum_stock %}
-                                <span class="badge bg-warning text-dark ms-2">ნაკლები მარაგი</span>
-                            {% else %}
-                                <span class="badge bg-success ms-2">მარაგშია</span>
-                            {% endif %}
-                        </dd>
-
-                        <dt class="col-sm-4">მინიმალური მარაგის ზღვარი:</dt>
-                        <dd class="col-sm-8">{{ item.minimum_stock_level }}</dd>
-
-                        <dt class="col-sm-4">ერთეულის ფასი:</dt>
-                        <dd class="col-sm-8">
-                            {% if item.unit_price is not None %}
-                                {{ item.unit_price }} ₾ {# თუ სხვა ვალუტაა, შეცვალე #}
-                            {% else %}
-                                მიუწვდომელია
-                            {% endif %}
-                        </dd>
-
-                        <hr class="my-3">
-
-                        <dt class="col-sm-4">საცავის მდებარეობა:</dt>
-                        <dd class="col-sm-8">{{ item.storage_location|default:"მიუწვდომელია" }}</dd>
-
-                        <dt class="col-sm-4">ბოლო შევსების თარიღი:</dt>
-                        <dd class="col-sm-8">{{ item.last_restocked_date|date:"Y-m-d"|default:"მიუწვდომელია" }}</dd>
-
-                        <dt class="col-sm-4">ვადის გასვლის თარიღი:</dt>
-                        <dd class="col-sm-8">{{ item.expiry_date|date:"Y-m-d"|default:"მიუწვდომელია" }}</dd>
-
-                        <dt class="col-sm-4">შენიშვნები:</dt>
-                        <dd class="col-sm-8">{{ item.notes|linebreaksbr|default:"მიუწვდომელია" }}</dd>
-
-                        <hr class="my-3">
-
-                        <dt class="col-sm-4">დამატების თარიღი:</dt>
-                        <dd class="col-sm-8">{{ item.date_added|date:"Y-m-d H:i" }}</dd>
-
-                        <dt class="col-sm-4">ბოლო განახლება:</dt>
-                        <dd class="col-sm-8">{{ item.last_updated|date:"Y-m-d H:i" }}</dd>
-                    </dl>
-                </div>
-                <div class="card-footer text-end">
-                    <a href="{% url 'warehouse:stockitem_list' %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-1"></i> დაბრუნება სიაში
-                    </a>
-                    {% if perms.warehouse.change_stockitem %}
-                    <a href="{% url 'warehouse:stockitem_edit' pk=item.pk %}" class="btn btn-secondary">
-                        <i class="fas fa-edit me-1"></i> ელემენტის რედაქტირება
-                    </a>
+                <div>
+                    {% if item.is_below_minimum_stock %}
+                        <span class="badge bg-warning text-dark">{% trans "ნაკლები მარაგი" %}</span>
+                    {% else %}
+                        <span class="badge bg-success">{% trans "მარაგშია" %}</span>
                     {% endif %}
-                    {# აქ შესაძლებელია წაშლის ღილაკის დამატება საჭიროების შემთხვევაში #}
                 </div>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">ID / SKU</dt>
+                    <dd class="col-sm-8">{{ item.item_id|default:item.pk }}</dd>
+
+                    <dt class="col-sm-4">დასახელება</dt>
+                    <dd class="col-sm-8">{{ item.name|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">აღწერა</dt>
+                    <dd class="col-sm-8">{{ item.description|linebreaksbr|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">კატეგორია</dt>
+                    <dd class="col-sm-8">{{ item.category.name|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">მომწოდებელი</dt>
+                    <dd class="col-sm-8">{{ item.supplier.name|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">მარაგში რაოდენობა</dt>
+                    <dd class="col-sm-8">{{ item.quantity_on_hand|default:"0" }}</dd>
+
+                    <dt class="col-sm-4">მინ. მარაგი</dt>
+                    <dd class="col-sm-8">{{ item.minimum_stock_level|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">ერთეულის ფასი</dt>
+                    <dd class="col-sm-8">
+                        {% if item.unit_price is not None %}
+                            {{ item.unit_price }} ₾
+                        {% else %}
+                            მიუწვდომელია
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">საცავის მდებარეობა</dt>
+                    <dd class="col-sm-8">{{ item.storage_location|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">ბოლო შევსების თარიღი</dt>
+                    <dd class="col-sm-8">{{ item.last_restocked_date|date:"Y-m-d"|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">ვადის გასვლის თარიღი</dt>
+                    <dd class="col-sm-8">{{ item.expiry_date|date:"Y-m-d"|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">შენიშვნები</dt>
+                    <dd class="col-sm-8">{{ item.notes|linebreaksbr|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">დამატების თარიღი</dt>
+                    <dd class="col-sm-8">{{ item.date_added|date:"Y-m-d H:i"|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">ბოლო განახლება</dt>
+                    <dd class="col-sm-8">{{ item.last_updated|date:"Y-m-d H:i"|default:"-" }}</dd>
+                </dl>
+            </div>
+            <div class="card-footer text-end">
+                <a href="{% url 'warehouse:stockitem_list' %}" class="btn btn-outline-secondary">
+                    <i class="ti ti-arrow-left me-1"></i> დაბრუნება სიაში
+                </a>
+                {% if perms.warehouse.change_stockitem %}
+                <a href="{% url 'warehouse:stockitem_edit' item.pk %}" class="btn btn-primary">
+                    <i class="ti ti-edit me-1"></i> რედაქტირება
+                </a>
+                {% endif %}
+                {% if perms.warehouse.delete_stockitem %}
+                <a href="{% url 'warehouse:stockitem_delete' item.pk %}" class="btn btn-danger">
+                    <i class="ti ti-trash me-1"></i> წაშლა
+                </a>
+                {% endif %}
             </div>
         </div>
     </div>

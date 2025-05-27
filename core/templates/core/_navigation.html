@@ -1,81 +1,61 @@
 {% load i18n static %}
 
-{# The 'navbar-sticky' class makes the navbar fixed at the top. 
-   You can control this via a context variable from base.html or views if needed.
-   'navbar-light' for light background, 'navbar-dark' for dark.
-   'd-print-none' to hide it when printing.
-#}
 <header class="navbar navbar-expand-md d-print-none navbar-light navbar-sticky">
     <div class="container-xl">
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="{% trans 'მენიუს გახსნა' %}">
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        {# Navbar Brand - Tabler often uses h1 for semantic structure #}
         <h1 class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
             <a href="{% url 'core:dashboard' %}" aria-label="{% trans 'მთავარი გვერდი' %}">
-                {# Replace with your logo image if you have one, or use an icon #}
-                {# <img src="{% static 'path/to/your/logo.svg' %}" width="110" height="32" alt="Logo" class="navbar-brand-image"> #}
-                <i class="ti ti-building-hospital icon me-2"></i> {# Tabler Icon for Hospital/Clinic #}
-                <span class="d-none d-sm-inline-block">{% trans "საინვენტარო სისტემა" %}</span> {# Hide text on very small screens if needed #}
+                <i class="ti ti-building-hospital icon me-2"></i> 
+                <span class="d-none d-sm-inline-block">{% trans "საინვენტარო სისტემა" %}</span>
             </a>
         </h1>
 
-        {# Right-aligned items: User menu, notifications, etc. #}
         <div class="navbar-nav flex-row order-md-last">
             {% if user.is_authenticated %}
                 {% if user.is_superuser %}
-                <div class="nav-item d-none d-md-flex me-3"> {# Hide on mobile, show on md and up #}
+                <div class="nav-item d-none d-md-flex me-3">
                     <a href="{% url 'admin:index' %}" class="nav-link px-0" target="_blank" rel="noopener noreferrer" title="{% trans 'ადმინ პანელი' %}" data-bs-toggle="tooltip">
                         <i class="ti ti-shield-cog icon"></i>
                     </a>
                 </div>
                 {% endif %}
-
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="{% trans 'მომხმარებლის მენიუს გახსნა' %}">
-                        {# Consider using an avatar if available #}
                         <span class="avatar avatar-sm bg-blue-lt">{{ user.get_username|slice:":1"|upper }}</span>
                         <div class="d-none d-xl-block ps-2">
                             <div>{{ user.get_username }}</div>
-                            <div class="mt-1 small text-muted">{% if user.is_staff %}{% trans "ადმინისტატორი" %}{% else %}{% trans "მომხმარებელი" %}{% endif %}</div>
+                            <div class="mt-1 small text-muted">{% if user.is_staff %}{% trans "ადმინისტრატორი" %}{% else %}{% trans "მომხმარებელი" %}{% endif %}</div>
                         </div>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                        <a href="#" class="dropdown-item">
-                            <i class="ti ti-user icon dropdown-item-icon"></i> {% trans "პროფილი" %}
-                        </a>
+                        <a href="#" class="dropdown-item"><i class="ti ti-user icon dropdown-item-icon"></i> {% trans "პროფილი" %}</a> {# TODO: Add core:profile URL if you create one #}
                         <div class="dropdown-divider"></div>
-                        {# Example additional links
-                        <a href="#" class="dropdown-item"><i class="ti ti-settings icon dropdown-item-icon"></i> {% trans "პარამეტრები" %}</a>
-                        #}
                         <form id="logout-form-nav" method="post" action="{% url 'core:logout' %}" class="mb-0">
                             {% csrf_token %}
-                            <button type="submit" class="dropdown-item">
-                                <i class="ti ti-logout icon dropdown-item-icon"></i> {% trans "გასვლა" %}
-                            </button>
+                            <button type="submit" class="dropdown-item"><i class="ti ti-logout icon dropdown-item-icon"></i> {% trans "გასვლა" %}</button>
                         </form>
                     </div>
                 </div>
             {% else %}
                 <div class="nav-item">
-                    <a href="{% url 'core:login' %}" class="nav-link {% if request.resolver_match.view_name == 'core:login' %}active{% endif %}">
+                    <a href="{% url 'core:login' %}" class="nav-link {% if request.resolver_match.url_name == 'login' and request.resolver_match.namespace == 'core' %}active{% endif %}">
                         <i class="ti ti-login icon me-1"></i>{% trans "შესვლა" %}
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{% url 'core:register' %}" class="nav-link {% if request.resolver_match.view_name == 'core:register' %}active{% endif %}">
+                    <a href="{% url 'core:register' %}" class="nav-link {% if request.resolver_match.url_name == 'register' and request.resolver_match.namespace == 'core' %}active{% endif %}">
                         <i class="ti ti-user-plus icon me-1"></i>{% trans "რეგისტრაცია" %}
                     </a>
                 </div>
             {% endif %}
         </div>
 
-        {# Collapsible menu items #}
         <div class="collapse navbar-collapse" id="navbar-menu">
-            {# 'mt-2 mt-md-0' for spacing on mobile when menu is stacked #}
             <ul class="navbar-nav mt-2 mt-md-0">
-                <li class="nav-item {% if request.resolver_match.view_name == 'core:dashboard' %}active{% endif %}">
+                <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'core' %}active{% endif %}">
                     <a class="nav-link" href="{% url 'core:dashboard' %}">
                         <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-chart-line icon"></i></span>
                         <span class="nav-link-title">{% trans "დეშბორდი" %}</span>
@@ -83,6 +63,7 @@
                 </li>
 
                 {% if user.is_authenticated %}
+                    {# Links to other apps will use their own namespaces #}
                     {% if user.is_staff %}
                         <li class="nav-item {% if request.resolver_match.app_name == 'inventory' %}active{% endif %}">
                             <a class="nav-link" href="{% url 'inventory:equipment_list' %}">
@@ -102,19 +83,8 @@
                                 <span class="nav-link-title">{% trans "ყველა მოთხოვნა" %}</span>
                             </a>
                         </li>
-                         {# Example of a dropdown menu for staff #}
-                        {# <li class="nav-item dropdown {% if request.resolver_match.app_name == 'some_admin_app' %}active{% endif %}">
-                            <a class="nav-link dropdown-toggle" href="#navbar-extra" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-tool icon"></i></span>
-                                <span class="nav-link-title">{% trans "Admin Tools" %}</span>
-                            </a>
-                            <div class="dropdown-menu">
-                                <a class="dropdown-item" href="#">Tool 1</a>
-                                <a class="dropdown-item" href="#">Tool 2</a>
-                            </div>
-                        </li> #}
-                    {% else %} {# Regular user links #}
-                        <li class="nav-item {% if request.resolver_match.app_name == 'inventory' %}active{% endif %}">
+                    {% else %}
+                         <li class="nav-item {% if request.resolver_match.app_name == 'inventory' %}active{% endif %}">
                             <a class="nav-link" href="{% url 'inventory:equipment_list' %}">
                                 <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-device-desktop-analytics icon"></i></span>
                                 <span class="nav-link-title">{% trans "ინვენტარი" %}</span>

@@ -8,60 +8,42 @@
     
     <title>{% block page_title_full %}{% block page_title_prefix %}{% endblock page_title_prefix %}{% block page_title %}{% trans "აიტი ინვენტარის სისტემა" %}{% endblock page_title %}{% block page_title_suffix %}{% endblock page_title_suffix %}{% endblock page_title_full %}</title>
     
-    <!-- Tabler Core CSS -->
     <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
-    <!-- Tabler Themes (Optional, for additional predefined themes) -->
-    <!-- <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler-flags.min.css" rel="stylesheet"/> -->
-    <!-- <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler-payments.min.css" rel="stylesheet"/> -->
-    <!-- <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler-vendors.min.css" rel="stylesheet"/> -->
-    
-    <!-- Tabler Icons CSS -->
     <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" rel="stylesheet">
-
-    <!-- Original Font Awesome (Can be gradually replaced or removed if Tabler Icons suffice) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    
-    <!-- Custom project-wide styles -->
-    <link rel="stylesheet" href="{% static 'core/css/custom.css' %}"> {# Example: create this file for your own styles #}
-
-    <style>
-        /* Minimal inline styles, prefer custom.css */
-        /* .nav-link.active might need specific overrides if Tabler's defaults aren't sufficient */
-    </style>
+    <link rel="stylesheet" href="{% static 'core/css/custom.css' %}">
 
     {% block extra_css %}{% endblock extra_css %}
     {% block extra_head %}{% endblock extra_head %}
 </head>
-<body class="layout-fluid" data-bs-theme="light"> {# `layout-fluid` for full width. Or `layout-boxed`. `data-bs-theme` can be 'dark' #}
+<body class="layout-fluid" data-bs-theme="light">
     <div class="page">
-        <!-- BEGIN: Header -->
         {% block header %}
             {% include "core/_navigation.html" %} 
-            {# IMPORTANT: core/_navigation.html needs a major overhaul to use Tabler's navbar components #}
         {% endblock header %}
-        <!-- END: Header -->
 
-        <!-- BEGIN: Page Content -->
         <div class="page-wrapper">
             {% block page_wrapper_start %}{% endblock %}
 
-            <!-- BEGIN: Page Header (Optional: for breadcrumbs, page title, action buttons) -->
+            <!-- BEGIN: Page Header -->
             {% block page_header %}
-                {# Example Tabler page-header structure (can be customized in child templates) #}
-                {#
                 <div class="page-header d-print-none">
                     <div class="container-xl">
                         <div class="row g-2 align-items-center">
                             <div class="col">
                                 {% block breadcrumbs %}
-                                <!-- Breadcrumb nav can go here -->
+                                    {# This block can be used for breadcrumbs or pre-titles if needed in child templates #}
+                                    {# Example: <div class="page-pretitle"> {% block page_pretitle %}{% endblock %} </div> #}
                                 {% endblock breadcrumbs %}
                                 <h2 class="page-title">
-                                    {% block page_header_title %}{% endblock page_header_title %}
+                                    {% block page_header_title %}
+                                        {{ page_title|default:_("გვერდის სათაური") }} 
+                                    {% endblock page_header_title %}
                                 </h2>
+                                {% block page_header_subtitle %}
+                                {% endblock page_header_subtitle %}
                             </div>
                             {% block page_actions %}
-                            <!-- Page specific actions -->
                             <div class="col-auto ms-auto d-print-none">
                                 <div class="btn-list">
                                     {% block page_action_buttons %}{% endblock page_action_buttons %}
@@ -71,16 +53,13 @@
                         </div>
                     </div>
                 </div>
-                #}
             {% endblock page_header %}
             <!-- END: Page Header -->
 
-            <!-- BEGIN: Page Body -->
             <div class="page-body">
                 <div class="container-xl">
                     {% block page_body_start %}{% endblock %}
 
-                    <!-- Django Messages -->
                     {% if messages %}
                         <div class="row row-cards">
                             <div class="col-12">
@@ -93,28 +72,21 @@
                             </div>
                         </div>
                     {% endif %}
-                    <!-- End Django Messages -->
                     
                     {% block content_container %}
-                        {% block content_row_cards_start %}{% endblock %}
                         <div class="row row-cards">
-                             {% block content_col_start %}{% endblock %}
                             <div class="col-12">
                                 {% block content %}
                                 <!-- Page specific content will be injected here -->
                                 {% endblock content %}
                             </div>
-                             {% block content_col_end %}{% endblock %}
                         </div>
-                        {% block content_row_cards_end %}{% endblock %}
                     {% endblock content_container %}
 
                     {% block page_body_end %}{% endblock %}
                 </div>
             </div>
-            <!-- END: Page Body -->
 
-            <!-- BEGIN: Footer -->
             {% block footer %}
             <footer class="footer footer-transparent d-print-none">
                 <div class="container-xl">
@@ -123,7 +95,6 @@
                             <ul class="list-inline list-inline-dots mb-0">
                                 <li class="list-inline-item"><a href="{% url 'core:privacy_policy' %}" class="link-secondary">{% trans "კონფიდენციალურობის პოლიტიკა" %}</a></li>
                                 <li class="list-inline-item"><a href="{% url 'core:terms_service' %}" class="link-secondary">{% trans "წესები და პირობები" %}</a></li>
-                                {# <li class="list-inline-item"><a href="https://github.com/tabler/tabler" target="_blank" class="link-secondary" rel="noopener">Source code</a></li> #}
                             </ul>
                         </div>
                         <div class="col-12 col-lg-auto mt-3 mt-lg-0">
@@ -139,27 +110,17 @@
                 </div>
             </footer>
             {% endblock footer %}
-            <!-- END: Footer -->
 
             {% block page_wrapper_end %}{% endblock %}
         </div>
-        <!-- END: Page Content -->
     </div>
 
-    <!-- Tabler Core JS -->
     <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js" defer></script>
-    <!-- Additional optional Tabler plugins if needed -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/demo.min.js" defer></script> -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/demo-theme.min.js" defer></script> -->
-
-    <!-- Project specific JS -->
-    <script src="{% static 'core/js/custom.js' %}"></script> {# Example: create this file for your own JS #}
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> 
+    <script src="{% static 'core/js/custom.js' %}"></script>
 
     {% block extra_js_before_jquery %}{% endblock %}
-    {# If you still need jQuery for some old plugins not compatible with Tabler's vanilla JS approach #}
-    {# <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> #}
     {% block extra_js_after_jquery %}{% endblock %}
-
-    {% block extra_scripts %}{% endblock extra_scripts %}
+    {% block extra_js_scripts %}{% endblock extra_js_scripts %} 
 </body>
 </html>
