@@ -1,83 +1,165 @@
 {% load static i18n %}
 <!DOCTYPE html>
-<html lang="{{ request.LANGUAGE_CODE|default:"ka" }}">
+<html lang="{{ request.LANGUAGE_CODE|default:"ka" }}" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% trans "აიტი ინვენტარის სისტემა" %}{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
     
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
+    <title>{% block page_title_full %}{% block page_title_prefix %}{% endblock page_title_prefix %}{% block page_title %}{% trans "აიტი ინვენტარის სისტემა" %}{% endblock page_title %}{% block page_title_suffix %}{% endblock page_title_suffix %}{% endblock page_title_full %}</title>
+    
+    <!-- Tabler Core CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
+    <!-- Tabler Themes (Optional, for additional predefined themes) -->
+    <!-- <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler-flags.min.css" rel="stylesheet"/> -->
+    <!-- <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler-payments.min.css" rel="stylesheet"/> -->
+    <!-- <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler-vendors.min.css" rel="stylesheet"/> -->
+    
+    <!-- Tabler Icons CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" rel="stylesheet">
+
+    <!-- Original Font Awesome (Can be gradually replaced or removed if Tabler Icons suffice) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     
+    <!-- Custom project-wide styles -->
+    <link rel="stylesheet" href="{% static 'core/css/custom.css' %}"> {# Example: create this file for your own styles #}
+
     <style>
-        body {
-            padding-top: 56px; /* Default navbar height for sticky-top */
-            background-color: #f8f9fa; 
-            display: flex; 
-            flex-direction: column; 
-            min-height: 100vh; 
-        }
-        .navbar {
-            /* border-bottom: 1px solid #e9ecef; */ 
-        }
-        .nav-link.active {
-            color: #0d6efd !important; 
-           /* border-bottom: 2px solid #0d6efd; */
-           /* margin-bottom: -2px; */
-        }
-        .content-wrapper {
-            padding-top: 1.5rem; 
-            padding-bottom: 1.5rem; 
-            flex-grow: 1; 
-        }
-        .alert {
-            margin-bottom: 1.5rem;
-        }
-        .footer {
-            background-color: #e9ecef; 
-            padding-top: 1rem;
-            padding-bottom: 1rem;
-        }
+        /* Minimal inline styles, prefer custom.css */
+        /* .nav-link.active might need specific overrides if Tabler's defaults aren't sufficient */
     </style>
-    {% block extra_head %}{% endblock %}
+
+    {% block extra_css %}{% endblock extra_css %}
+    {% block extra_head %}{% endblock extra_head %}
 </head>
-<body>
-    
-    <div class="container">
-        {% include "core/_navigation.html" %}
-    </div>
+<body class="layout-fluid" data-bs-theme="light"> {# `layout-fluid` for full width. Or `layout-boxed`. `data-bs-theme` can be 'dark' #}
+    <div class="page">
+        <!-- BEGIN: Header -->
+        {% block header %}
+            {% include "core/_navigation.html" %} 
+            {# IMPORTANT: core/_navigation.html needs a major overhaul to use Tabler's navbar components #}
+        {% endblock header %}
+        <!-- END: Header -->
 
-    <div class="container content-wrapper">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% trans 'დახურვა' %}"></button>
+        <!-- BEGIN: Page Content -->
+        <div class="page-wrapper">
+            {% block page_wrapper_start %}{% endblock %}
+
+            <!-- BEGIN: Page Header (Optional: for breadcrumbs, page title, action buttons) -->
+            {% block page_header %}
+                {# Example Tabler page-header structure (can be customized in child templates) #}
+                {#
+                <div class="page-header d-print-none">
+                    <div class="container-xl">
+                        <div class="row g-2 align-items-center">
+                            <div class="col">
+                                {% block breadcrumbs %}
+                                <!-- Breadcrumb nav can go here -->
+                                {% endblock breadcrumbs %}
+                                <h2 class="page-title">
+                                    {% block page_header_title %}{% endblock page_header_title %}
+                                </h2>
+                            </div>
+                            {% block page_actions %}
+                            <!-- Page specific actions -->
+                            <div class="col-auto ms-auto d-print-none">
+                                <div class="btn-list">
+                                    {% block page_action_buttons %}{% endblock page_action_buttons %}
+                                </div>
+                            </div>
+                            {% endblock page_actions %}
+                        </div>
+                    </div>
                 </div>
-            {% endfor %}
-        {% endif %}
-        
-        {% block content %}
-        <!-- გვერდის სპეციფიკური კონტენტი აქ იქნება ჩასმული -->
-        {% endblock %}
-    </div>
+                #}
+            {% endblock page_header %}
+            <!-- END: Page Header -->
 
-    <footer class="footer"> 
-        <div class="container">
-            <div class="d-flex align-items-center justify-content-between small">
-                <div class="text-muted">Copyright &copy; {% now "Y" %} {% trans "აიტი ინვენტარის სისტემა" %}</div>
-                <div>
-                    <a href="#" class="text-decoration-none">{% trans "კონფიდენციალურობის პოლიტიკა" %}</a>
-                    &middot;
-                    <a href="#" class="text-decoration-none">{% trans "წესები და პირობები" %}</a>
+            <!-- BEGIN: Page Body -->
+            <div class="page-body">
+                <div class="container-xl">
+                    {% block page_body_start %}{% endblock %}
+
+                    <!-- Django Messages -->
+                    {% if messages %}
+                        <div class="row row-cards">
+                            <div class="col-12">
+                                {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+                                    <div>{{ message }}</div>
+                                    <a class="btn-close" data-bs-dismiss="alert" aria-label="{% trans 'დახურვა' %}"></a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    <!-- End Django Messages -->
+                    
+                    {% block content_container %}
+                        {% block content_row_cards_start %}{% endblock %}
+                        <div class="row row-cards">
+                             {% block content_col_start %}{% endblock %}
+                            <div class="col-12">
+                                {% block content %}
+                                <!-- Page specific content will be injected here -->
+                                {% endblock content %}
+                            </div>
+                             {% block content_col_end %}{% endblock %}
+                        </div>
+                        {% block content_row_cards_end %}{% endblock %}
+                    {% endblock content_container %}
+
+                    {% block page_body_end %}{% endblock %}
                 </div>
             </div>
-        </div>
-    </footer>
+            <!-- END: Page Body -->
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    {% block extra_scripts %}{% endblock %}
+            <!-- BEGIN: Footer -->
+            {% block footer %}
+            <footer class="footer footer-transparent d-print-none">
+                <div class="container-xl">
+                    <div class="row text-center align-items-center flex-row-reverse">
+                        <div class="col-lg-auto ms-lg-auto">
+                            <ul class="list-inline list-inline-dots mb-0">
+                                <li class="list-inline-item"><a href="{% url 'core:privacy_policy' %}" class="link-secondary">{% trans "კონფიდენციალურობის პოლიტიკა" %}</a></li>
+                                <li class="list-inline-item"><a href="{% url 'core:terms_service' %}" class="link-secondary">{% trans "წესები და პირობები" %}</a></li>
+                                {# <li class="list-inline-item"><a href="https://github.com/tabler/tabler" target="_blank" class="link-secondary" rel="noopener">Source code</a></li> #}
+                            </ul>
+                        </div>
+                        <div class="col-12 col-lg-auto mt-3 mt-lg-0">
+                            <ul class="list-inline list-inline-dots mb-0">
+                                <li class="list-inline-item">
+                                    Copyright &copy; {% now "Y" %}
+                                    <a href="." class="link-secondary">{% trans "აიტი ინვენტარის სისტემა" %}</a>.
+                                    {% trans "ყველა უფლება დაცულია." %}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+            {% endblock footer %}
+            <!-- END: Footer -->
+
+            {% block page_wrapper_end %}{% endblock %}
+        </div>
+        <!-- END: Page Content -->
+    </div>
+
+    <!-- Tabler Core JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js" defer></script>
+    <!-- Additional optional Tabler plugins if needed -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/demo.min.js" defer></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/demo-theme.min.js" defer></script> -->
+
+    <!-- Project specific JS -->
+    <script src="{% static 'core/js/custom.js' %}"></script> {# Example: create this file for your own JS #}
+
+    {% block extra_js_before_jquery %}{% endblock %}
+    {# If you still need jQuery for some old plugins not compatible with Tabler's vanilla JS approach #}
+    {# <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> #}
+    {% block extra_js_after_jquery %}{% endblock %}
+
+    {% block extra_scripts %}{% endblock extra_scripts %}
 </body>
 </html>

@@ -1,14 +1,13 @@
 {% extends "core/base.html" %}
 {% load static i18n %}
 
-{# Inspired by Tabler's light theme - Admin Dashboard Template #}
 {% block title %}{{ page_title|default:_("Admin Dashboard") }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid mt-4">
     <div class="row">
         <!-- Sidebar -->
-        <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
             <div class="position-sticky">
                 <ul class="nav flex-column">
                     <li class="nav-item">
@@ -52,7 +51,7 @@
                             <i class="fas fa-tasks fa-3x text-primary me-3"></i>
                             <div>
                                 <h5 class="card-title">{% trans "Pending Requests" %}</h5>
-                                <p class="card-text fs-4 fw-bold">45</p>
+                                <p class="card-text fs-4 fw-bold">{{ pending_requests|default:0 }}</p>
                             </div>
                         </div>
                     </div>
@@ -63,7 +62,7 @@
                             <i class="fas fa-boxes fa-3x text-success me-3"></i>
                             <div>
                                 <h5 class="card-title">{% trans "Inventory Items" %}</h5>
-                                <p class="card-text fs-4 fw-bold">120</p>
+                                <p class="card-text fs-4 fw-bold">{{ inventory_items|default:0 }}</p>
                             </div>
                         </div>
                     </div>
@@ -74,106 +73,29 @@
                             <i class="fas fa-warehouse fa-3x text-warning me-3"></i>
                             <div>
                                 <h5 class="card-title">{% trans "Warehouse Stock" %}</h5>
-                                <p class="card-text fs-4 fw-bold">342</p>
+                                <p class="card-text fs-4 fw-bold">{{ warehouse_stock|default:0 }}</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Chart -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0">{% trans "Request Trends" %}</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="requestTrendsChart" height="100"></canvas>
-                </div>
-            </div>
-
-            <!-- Filters and Table -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-light d-flex align-items-center justify-content-between">
-                    <h5 class="card-title mb-0">{% trans "Recent Requests" %}</h5>
-                    <div>
-                        <input type="text" class="form-control form-control-sm d-inline-block w-auto me-2" placeholder="{% trans 'Search...' %}">
-                        <select class="form-select form-select-sm d-inline-block w-auto">
-                            <option>{% trans "All Statuses" %}</option>
-                            <option>{% trans "Pending" %}</option>
-                            <option>{% trans "Completed" %}</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <table class="table table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th>{% trans "ID" %}</th>
-                                <th>{% trans "Subject" %}</th>
-                                <th>{% trans "Status" %}</th>
-                                <th>{% trans "Requested By" %}</th>
-                                <th>{% trans "Date" %}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>#101</td>
-                                <td>{% trans "Request for new monitor" %}</td>
-                                <td><span class="badge bg-primary">{% trans "Pending" %}</span></td>
-                                <td>John Doe</td>
-                                <td>2025-05-25</td>
-                            </tr>
-                            <tr>
-                                <td>#102</td>
-                                <td>{% trans "Install IP phone" %}</td>
-                                <td><span class="badge bg-success">{% trans "Completed" %}</span></td>
-                                <td>Jane Doe</td>
-                                <td>2025-05-24</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Notifications -->
+            <!-- Recent Activity -->
             <div class="card shadow-sm mt-4">
                 <div class="card-header bg-light">
                     <h5 class="card-title">{% trans "Recent Activity" %}</h5>
                 </div>
                 <div class="card-body">
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item">{% trans "John Doe updated request #101" %}</li>
-                        <li class="list-group-item">{% trans "Jane Doe completed request #102" %}</li>
-                        <li class="list-group-item">{% trans "New inventory item added by Admin" %}</li>
+                        {% for activity in recent_activities %}
+                            <li class="list-group-item">{{ activity }}</li>
+                        {% empty %}
+                            <li class="list-group-item text-muted">{% trans "No recent activities." %}</li>
+                        {% endfor %}
                     </ul>
                 </div>
             </div>
         </main>
     </div>
 </div>
-
-<script src="{% static 'core/js/chart.min.js' %}"></script>
-<script>
-    // Chart.js Mock Data
-    const ctx = document.getElementById('requestTrendsChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['January', 'February', 'March', 'April', 'May'],
-            datasets: [{
-                label: '{% trans "Requests" %}',
-                data: [20, 30, 15, 40, 25],
-                borderColor: '#007bff',
-                backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false }
-            }
-        }
-    });
-</script>
 {% endblock %}

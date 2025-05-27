@@ -1,0 +1,16 @@
+{% extends "core/base.html" %}
+{% load i18n %}
+
+{% block page_header_title %}{{ page_title|default:"Page" }}{% endblock page_header_title %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h3 class="card-title">{{ page_title|default:"Page Content" }}</h3>
+        <p>
+            {% trans "Content for this page will be added soon." %}
+        </p>
+        <p><a href="{% url 'core:dashboard' %}">{% trans "Back to Dashboard" %}</a></p>
+    </div>
+</div>
+{% endblock content %}
