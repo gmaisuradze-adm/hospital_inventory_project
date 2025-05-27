@@ -1,0 +1,1 @@
+[IT Request #{{ request.id }}] New Request Submitted: {{ request.subject|truncatechars:50 }}

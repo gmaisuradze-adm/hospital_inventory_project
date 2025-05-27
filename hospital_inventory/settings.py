@@ -1,4 +1,5 @@
 # Version: 1.2 - 2025-05-26 08:43:56 UTC - gmaisuradze-adm - Comprehensive settings.
+# Version: 1.3 - 2025-05-27 - Copilot Edit - Added Email Backend and DEFAULT_IT_EMAIL
 from pathlib import Path
 import os
 
@@ -6,17 +7,11 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# TODO: შეცვალეთ ეს გასაღები უნიკალური და რთული მნიშვნელობით.
-# არასდროს გაუშვათ პროდუქშენში ამ სტანდარტული გასაღებით.
-# შეგიძლიათ გამოიყენოთ Django secret key generator-ები.
 SECRET_KEY = 'django-insecure-your-secret-key' 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# შენიშვნა: DEBUG = True კარგია განვითარებისთვის, მაგრამ პროდუქშენში აუცილებლად False უნდა იყოს.
 DEBUG = True
 
-# შენიშვნა: ALLOWED_HOSTS ცარიელია, რაც DEBUG=True რეჟიმში დასაშვებია.
-# პროდუქშენისთვის აქ უნდა მიუთითოთ თქვენი დომენ(ებ)ი.
 ALLOWED_HOSTS = ["10.0.10.107", "localhost", "127.0.0.1"]
 
 # Application definition
@@ -54,8 +49,8 @@ ROOT_URLCONF = 'hospital_inventory.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'], # For project-level templates
-        'APP_DIRS': True, # ეს პარამეტრი ეძებს შაბლონებს თითოეული აპლიკაციის 'templates' საქაღალდეში.
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -69,8 +64,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'hospital_inventory.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -78,8 +71,6 @@ DATABASES = {
     }
 }
 
-# Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -95,39 +86,47 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-LANGUAGE_CODE = 'en-us' # შეგიძლიათ შეცვალოთ 'ka' ქართული ენისთვის, თუ თარგმანებს დაამატებთ.
-TIME_ZONE = 'UTC' # შეგიძლიათ შეცვალოთ თქვენი რეგიონის დროის სარტყლით, მაგ. 'Asia/Tbilisi'.
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'UTC'
 USE_I18N = True
-USE_TZ = True # რეკომენდებულია True მნიშვნელობის დატოვება დროის ზონებთან კორექტული მუშაობისთვის.
+USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
-    BASE_DIR / "static", # For project-level static files
+    BASE_DIR / "static",
 ]
-# STATIC_ROOT = BASE_DIR / "staticfiles_collected" # For production (გამოიყენება collectstatic ბრძანებისთვის)
 
-# Media files (User-uploaded content)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Crispy Forms settings
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-# Authentication settings
-LOGIN_URL = '/login/' # დარწმუნდით, რომ გაქვთ URL და view სახელად 'login' ან შეცვალეთ ეს.
-LOGIN_REDIRECT_URL = '/' # შესვლის შემდეგ გადამისამართების URL.
-LOGOUT_REDIRECT_URL = '/login/' # გამოსვლის შემდეგ გადამისამართების URL.
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/login/'
 
-# AUTH_USER_MODEL = 'core.CustomUser' # If you decide to use a custom user model later
-# შენიშვნა: თუ მომავალში დაგჭირდებათ მომხმარებლის მოდელის გაფართოება (მაგ. დამატებითი ველები),
-# Custom User Model-ის გამოყენება პროექტის დასაწყისშივე ჯობია.
-# ამ ეტაპზე, თუ არ გეგმავთ, Django-ს სტანდარტული User მოდელი გამოიყენება.
+# --- Email Configuration (NEW) ---
+if DEBUG:
+    # For development: prints emails to console
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    # For production: configure your actual SMTP settings
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'your_smtp_server_host'  # e.g., 'smtp.gmail.com'
+    EMAIL_PORT = 587  # Or 465 for SSL
+    EMAIL_USE_TLS = True # Or EMAIL_USE_SSL = True if port is 465
+    EMAIL_HOST_USER = 'your_email@example.com' # Your SMTP username
+    EMAIL_HOST_PASSWORD = 'your_email_password' # Your SMTP password
+    DEFAULT_FROM_EMAIL = 'webmaster@yourdomain.com' # Default sender for system emails
+
+# Default IT email for notifications (can be overridden elsewhere if needed)
+DEFAULT_IT_EMAIL = 'it-support@example.com' # Change to your desired IT support email
+
+# You might also want to set SERVER_EMAIL for error reports from Django
+# SERVER_EMAIL = 'django-errors@yourdomain.com'
+# ADMINS = [('Your Name', 'your_admin_email@example.com')] # For error reports
+
+# --- End Email Configuration ---

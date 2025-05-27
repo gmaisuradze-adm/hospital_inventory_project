@@ -1,0 +1,19 @@
+Hello IT Team,
+
+A new IT support request has been submitted:
+
+Request ID: #{{ request.id }}
+Subject: {{ request.subject }}
+Requested by: {{ request.requested_by.get_full_name|default:request.requested_by.username }}
+Priority: {{ request.get_priority_display }}
+{% if request.request_type %}Type: {{ request.request_type.name }}{% endif %}
+{% if request.department_location %}Department/Location: {{ request.department_location }}{% endif %}
+Created at: {{ request.created_at|date:"Y-m-d H:i" }}
+
+Description:
+{{ request.description|truncatewords_html:50|linebreaksbr }}
+
+You can view the full request details here:
+{{ request_detail_url }}
+
+Thank you.

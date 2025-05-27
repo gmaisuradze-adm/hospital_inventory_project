@@ -1,5 +1,6 @@
 {% extends "core/base.html" %}
-{% load static i18n %} {# Removed request_tags for now, assuming model methods for status badges in history #}
+{% load static i18n %}
+{% load crispy_forms_tags %} {# REQUIRED for rendering the form with crispy if you use it, or remove if not #}
 
 {# --- 1. გვერდის სათაური ბრაუზერის ტაბისთვის --- #}
 {% block page_title_prefix %}
@@ -19,17 +20,39 @@
     {% endif %}
 {% endblock page_header_title %}
 
-{# --- 3. მოქმედების ღილაკები --- #}
+{# --- 3. მოქმედების ღილაკები (სტაფისთვის და ზოგადი) --- #}
 {% block page_action_buttons %}
     {% if request_obj %}
-        {% if user.is_staff and request_obj.can_be_edited_by_staff %} {# USING MODEL METHOD #}
-            <a href="{% url 'requests_app:request_edit' pk=request_obj.pk %}" class="btn btn-outline-secondary">
+        {% if user == request_obj.requested_by %}
+            {% if request_obj.status == 'completed' %}
+                <a href="{% url 'requests_app:request_close_by_user' pk=request_obj.pk %}" class="btn btn-success me-2">
+                    <i class="ti ti-check me-1"></i>{% trans "დადასტურება და დახურვა" %}
+                </a>
+                <a href="{% url 'requests_app:request_reopen_by_user' pk=request_obj.pk %}" class="btn btn-warning me-2">
+                    <i class="ti ti-refresh-alert me-1"></i>{% trans "ხელახლა გახსნა" %}
+                </a>
+            {% elif request_obj.status == 'closed' %}
+                 <a href="{% url 'requests_app:request_reopen_by_user' pk=request_obj.pk %}" class="btn btn-warning me-2">
+                    <i class="ti ti-refresh me-1"></i>{% trans "ხელახლა გახსნა" %}
+                </a>
+            {% endif %}
+        {% endif %}
+
+        {% if user.is_staff and request_obj.can_be_edited_by_staff %}
+            <a href="{% url 'requests_app:request_edit' pk=request_obj.pk %}" class="btn btn-outline-secondary me-2">
                 <i class="ti ti-edit me-1"></i>{% trans "მოთხოვნის რედაქტირება" %}
             </a>
         {% endif %}
-        <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-primary">
-            <i class="ti ti-arrow-left me-1"></i>{% trans "სიისკენ დაბრუნება" %}
-        </a>
+
+        {% if user.is_staff %}
+            <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-primary">
+                <i class="ti ti-arrow-left me-1"></i>{% trans "ადმინ. სიისკენ" %}
+            </a>
+        {% else %}
+            <a href="{% url 'requests_app:user_request_list' %}" class="btn btn-primary">
+                <i class="ti ti-arrow-left me-1"></i>{% trans "ჩემი მოთხოვნებისკენ" %}
+            </a>
+        {% endif %}
     {% endif %}
 {% endblock page_action_buttons %}
 
@@ -37,13 +60,13 @@
 {# --- 4. ძირითადი შიგთავსი --- #}
 {% block content %}
 {% if request_obj %}
-    <div class="card shadow-sm">
+    <div class="card shadow-sm mb-4"> {# Added mb-4 for spacing before next card if any #}
         <div class="card-body p-4">
             <div class="row">
-                <div class="col-lg-8 mb-4 mb-lg-0"> {# Added mb-4 mb-lg-0 for spacing on smaller screens #}
+                <div class="col-lg-8 mb-4 mb-lg-0">
                     <dl class="row gy-3">
-                        <dt class="col-sm-4 col-md-3 text-muted">{% trans "ID" %}:</dt> {# Added text-muted #}
-                        <dd class="col-sm-8 col-md-9 fw-bold">#{{ request_obj.id }}</dd> {# Added fw-bold #}
+                        <dt class="col-sm-4 col-md-3 text-muted">{% trans "ID" %}:</dt>
+                        <dd class="col-sm-8 col-md-9 fw-bold">#{{ request_obj.id }}</dd>
 
                         <dt class="col-sm-4 col-md-3 text-muted">{% trans "საგანი" %}:</dt>
                         <dd class="col-sm-8 col-md-9">{{ request_obj.subject|default:"-" }}</dd>
@@ -55,7 +78,7 @@
 
                         <dt class="col-sm-4 col-md-3 text-muted">{% trans "პრიორიტეტი" %}:</dt>
                         <dd class="col-sm-8 col-md-9">
-                            <span class="badge {{ request_obj.get_priority_badge_class }}"> {# USING MODEL METHOD #}
+                            <span class="badge {{ request_obj.get_priority_badge_class }}">
                                 {{ request_obj.get_priority_display|default:"-" }}
                             </span>
                         </dd>
@@ -77,7 +100,7 @@
                     </dl>
 
                     <div class="mt-4">
-                        <h5 class="mb-2">{% trans "აღწერა" %}:</h5> {# Changed to h5 and added mb-2 #}
+                        <h5 class="mb-2">{% trans "აღწერა" %}:</h5>
                         <div class="p-3 bg-light rounded border" style="white-space: pre-wrap;">
                             {{ request_obj.description|default:_("აღწერა მითითებული არ არის.") }}
                         </div>
@@ -93,8 +116,8 @@
                     {% endif %}
                 </div>
 
-                <div class="col-lg-4"> {# Removed mt-4 mt-lg-0, handled by parent div's mb #}
-                    <div class="card mb-3 shadow-sm"> {# Added shadow-sm #}
+                <div class="col-lg-4">
+                    <div class="card mb-3 shadow-sm">
                         <div class="card-header"><h3 class="card-title">{% trans "ავტორი & დროები" %}</h3></div>
                         <ul class="list-group list-group-flush">
                             <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "ავტორი" %}:</strong></span> <span>{{ request_obj.requested_by.get_full_name|default:request_obj.requested_by.username|default:"-" }}</span></li>
@@ -103,12 +126,16 @@
                             <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "მინიჭების თარიღი" %}:</strong></span> <span class="text-success">{{ request_obj.date_assigned|date:"Y-m-d H:i" }}</span></li>
                             {% endif %}
                             {% if request_obj.resolved_at %}
-                            <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "დასრულების/უარყოფის თარიღი" %}:</strong></span> <span class="text-danger">{{ request_obj.resolved_at|date:"Y-m-d H:i" }}</span></li>
+                                {% if request_obj.status == 'rejected' %}
+                                    <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "უარყოფის თარიღი" %}:</strong></span> <span class="text-danger">{{ request_obj.resolved_at|date:"Y-m-d H:i" }}</span></li>
+                                {% else %}
+                                    <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "დასრულების/დახურვის თარიღი" %}:</strong></span> <span class="text-success">{{ request_obj.resolved_at|date:"Y-m-d H:i" }}</span></li>
+                                {% endif %}
                             {% endif %}
                              <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "ბოლო განახლება" %}:</strong></span> <span>{{ request_obj.updated_at|date:"Y-m-d H:i" }}</span></li>
                         </ul>
                     </div>
-                    <div class="card shadow-sm"> {# Added shadow-sm #}
+                    <div class="card shadow-sm">
                         <div class="card-header"><h3 class="card-title">{% trans "მინიჭება & ტექნიკა" %}</h3></div>
                         <ul class="list-group list-group-flush">
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -136,22 +163,22 @@
             {# --- Request Updates / History --- #}
             <div class="mt-4 pt-4 border-top">
                 <h4 class="mb-3">{% trans "განახლებების ისტორია" %}</h4>
-                {% with updates=request_obj.updates.all %}
+                {% with updates=request_obj.updates.all %} {# Assuming related_name 'updates' for RequestUpdate model on Request #}
                 {% if updates %}
                     <div class="list-group list-group-flush">
                     {% for update_entry in updates %}
-                        <div class="list-group-item py-3 px-0"> {# Added px-0 for full width text #}
-                            <div class="row align-items-start"> {# Changed to align-items-start #}
+                        <div class="list-group-item py-3 px-0">
+                            <div class="row align-items-start">
                                 <div class="col-auto">
-                                    <span class="avatar avatar-sm rounded"> {# Added rounded #}
+                                    <span class="avatar avatar-sm rounded">
                                         {{ update_entry.updated_by.username.0|upper|default:"S" }}
                                     </span>
                                 </div>
-                                <div class="col"> {# Removed text-truncate, let it wrap #}
+                                <div class="col">
                                     <div>
                                         <strong>{{ update_entry.updated_by.get_full_name|default:update_entry.updated_by.username|default:_("სისტემა") }}</strong>
                                         {% if update_entry.old_status and update_entry.new_status and update_entry.old_status != update_entry.new_status %}
-                                            <span class="text-muted small ms-1"> {# Added small class #}
+                                            <span class="text-muted small ms-1">
                                                 {% trans "შეცვალა სტატუსი" %}
                                                 <span class="badge {{ update_entry.get_old_status_badge_html_class }}">{{ update_entry.get_old_status_display_safe }}</span>
                                                 {% trans "-დან" %}
@@ -160,8 +187,8 @@
                                             </span>
                                         {% endif %}
                                     </div>
-                                    {% if update_entry.notes %} {# Display notes only if they exist #}
-                                    <div class="text-muted small mt-1" style="white-space: pre-wrap;">{{ update_entry.notes|linebreaksbr }}</div> {# Added pre-wrap and small #}
+                                    {% if update_entry.notes %}
+                                    <div class="text-muted small mt-1" style="white-space: pre-wrap;">{{ update_entry.notes|linebreaksbr }}</div>
                                     {% endif %}
                                 </div>
                                 <div class="col-auto text-end">
@@ -178,6 +205,39 @@
                 {% endif %}
                 {% endwith %}
             </div>
+
+            {# --- NEW: User Comment Form --- #}
+            {% if user_comment_form %} {# This context variable is passed from RequestDetailView #}
+            <div class="mt-4 pt-4 border-top">
+                <h4 class="mb-3">{% trans "კომენტარის დამატება" %}</h4>
+                <form method="post" action="{% url 'requests_app:request_detail' pk=request_obj.pk %}">
+                    {% csrf_token %}
+                    
+                    {# If using crispy_forms, you can just do: #}
+                    {# {{ user_comment_form|crispy }} #}
+                    
+                    {# Manual rendering if not using crispy_forms for this specific form #}
+                    {% for field in user_comment_form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }} {# This will use BootstrapFormMixin styling from forms.py #}
+                            {% if field.help_text %}
+                                <small class="form-text text-muted">{{ field.help_text }}</small>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    
+                    <button type="submit" name="submit_user_comment" class="btn btn-info">
+                        <i class="ti ti-send me-1"></i>{% trans "კომენტარის გაგზავნა" %}
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+            {# --- END NEW: User Comment Form --- #}
+
         </div>
 
         <div class="card-footer text-muted text-center small py-2">
@@ -190,7 +250,7 @@
         </div>
     </div>
 {% else %}
-    <div class="alert alert-warning shadow-sm" role="alert"> {# Added shadow-sm #}
+    <div class="alert alert-warning shadow-sm" role="alert">
       <i class="ti ti-alert-triangle me-2"></i>{% trans "მოთხოვნა ვერ მოიძებნა." %}
     </div>
 {% endif %}
