@@ -1,86 +1,179 @@
 {% extends "core/base.html" %}
-{% load static i18n %} {# Added i18n for potential future use in default texts #}
+{% load static i18n %}
 
-{# Version: 1.1 - 2025-05-26 11:18:56 UTC - gmaisuradze-adm - Corrected request_admin_list to admin_request_list #}
-{% block title %}{{ page_title|default:_("Dashboard") }} - {% trans "Hospital IT Inventory" %}{% endblock %}
+{# Inspired by Tabler's light theme - Admin Dashboard Template #}
+{% block title %}{{ page_title|default:_("Admin Dashboard") }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+            <div class="position-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'dashboard' %}">
+                            <i class="fas fa-tachometer-alt me-2"></i> {% trans "Dashboard" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'inventory:equipment_list' %}">
+                            <i class="fas fa-boxes me-2"></i> {% trans "Inventory" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'requests_app:admin_request_list' %}">
+                            <i class="fas fa-tasks me-2"></i> {% trans "Requests" %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'warehouse:stockitem_list' %}">
+                            <i class="fas fa-warehouse me-2"></i> {% trans "Warehouse" %}
+                        </a>
+                    </li>
+                </ul>
             </div>
-        {% endfor %}
-    {% endif %}
+        </nav>
 
-    <div class="px-4 py-5 my-5 text-center">
-        {# Assuming hospital-logo.png is in core/static/core/images/ #}
-        <img class="d-block mx-auto mb-4" src="{% static 'core/images/hospital-logo.png' %}" alt="{% trans 'Hospital Logo' %}" width="72" height="auto">
-        <h1 class="display-5 fw-bold">{{ page_title|default:_("IT Management Dashboard") }}</h1>
-        <div class="col-lg-6 mx-auto">
-            <p class="lead mb-4">{% blocktrans with username=user.username %}Welcome back, {{ username }}! This is your central hub for managing IT resources.{% endblocktrans %}</p>
-            <p>{% trans "From here, you can navigate to various sections of the IT inventory and request management system." %}</p>
-            <hr>
-            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-                {% if user.is_staff %}
-                    <a href="{% url 'inventory:equipment_list' %}" class="btn btn-primary btn-lg px-4 gap-3">{% trans "View Inventory" %}</a>
-                    <a href="{% url 'warehouse:stockitem_list' %}" class="btn btn-outline-secondary btn-lg px-4">{% trans "Warehouse Stock" %}</a>
-                    {# Corrected URL name for admin requests list #}
-                    <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-outline-info btn-lg px-4">{% trans "Manage Requests" %}</a>
-                {% else %}
-                     {# Corrected URL name for user requests list - placeholder, points to admin list for now #}
-                     <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-primary btn-lg px-4 gap-3">{% trans "My IT Requests" %}</a>
-                     {# Placeholder for request creation - this URL doesn't exist yet #}
-                     {# You will need to create a 'request_create' URL in requests_app.urls and a corresponding view #}
-                     <a href="#" class="btn btn-success btn-lg px-4 disabled" aria-disabled="true">{% trans "Submit New Request" %}</a> {# Added disabled state until functional #}
-                {% endif %}
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center py-3">
+                <h1 class="h2">{% trans "Admin Dashboard" %}</h1>
+                <button class="btn btn-outline-primary d-md-none" data-bs-toggle="collapse" data-bs-target="#sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
-        </div>
+
+            <!-- Statistic Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body d-flex align-items-center">
+                            <i class="fas fa-tasks fa-3x text-primary me-3"></i>
+                            <div>
+                                <h5 class="card-title">{% trans "Pending Requests" %}</h5>
+                                <p class="card-text fs-4 fw-bold">45</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body d-flex align-items-center">
+                            <i class="fas fa-boxes fa-3x text-success me-3"></i>
+                            <div>
+                                <h5 class="card-title">{% trans "Inventory Items" %}</h5>
+                                <p class="card-text fs-4 fw-bold">120</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body d-flex align-items-center">
+                            <i class="fas fa-warehouse fa-3x text-warning me-3"></i>
+                            <div>
+                                <h5 class="card-title">{% trans "Warehouse Stock" %}</h5>
+                                <p class="card-text fs-4 fw-bold">342</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">{% trans "Request Trends" %}</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="requestTrendsChart" height="100"></canvas>
+                </div>
+            </div>
+
+            <!-- Filters and Table -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light d-flex align-items-center justify-content-between">
+                    <h5 class="card-title mb-0">{% trans "Recent Requests" %}</h5>
+                    <div>
+                        <input type="text" class="form-control form-control-sm d-inline-block w-auto me-2" placeholder="{% trans 'Search...' %}">
+                        <select class="form-select form-select-sm d-inline-block w-auto">
+                            <option>{% trans "All Statuses" %}</option>
+                            <option>{% trans "Pending" %}</option>
+                            <option>{% trans "Completed" %}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>{% trans "ID" %}</th>
+                                <th>{% trans "Subject" %}</th>
+                                <th>{% trans "Status" %}</th>
+                                <th>{% trans "Requested By" %}</th>
+                                <th>{% trans "Date" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#101</td>
+                                <td>{% trans "Request for new monitor" %}</td>
+                                <td><span class="badge bg-primary">{% trans "Pending" %}</span></td>
+                                <td>John Doe</td>
+                                <td>2025-05-25</td>
+                            </tr>
+                            <tr>
+                                <td>#102</td>
+                                <td>{% trans "Install IP phone" %}</td>
+                                <td><span class="badge bg-success">{% trans "Completed" %}</span></td>
+                                <td>Jane Doe</td>
+                                <td>2025-05-24</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title">{% trans "Recent Activity" %}</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">{% trans "John Doe updated request #101" %}</li>
+                        <li class="list-group-item">{% trans "Jane Doe completed request #102" %}</li>
+                        <li class="list-group-item">{% trans "New inventory item added by Admin" %}</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
     </div>
-
-    {% if user.is_staff %}
-    <div class="row mt-5">
-        <div class="col-md-4 mb-3">
-            <div class="card text-center h-100">
-                <div class="card-header">
-                    {% trans "Inventory Overview" %}
-                </div>
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">{% trans "Total Equipment" %}</h5>
-                    <p class="card-text fs-3 mt-auto">{{ total_equipment_count|default:"N/A" }}</p>
-                    <a href="{% url 'inventory:equipment_list' %}" class="btn btn-sm btn-outline-primary mt-2">{% trans "Go to Inventory" %}</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="card text-center h-100">
-                <div class="card-header">
-                    {% trans "Warehouse Stock" %}
-                </div>
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">{% trans "Total Stock Items" %}</h5>
-                    <p class="card-text fs-3 mt-auto">{{ total_stock_items_count|default:"N/A" }}</p>
-                    <a href="{% url 'warehouse:stockitem_list' %}" class="btn btn-sm btn-outline-secondary mt-2">{% trans "Go to Warehouse" %}</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="card text-center h-100">
-                <div class="card-header">
-                    {% trans "Active IT Requests" %}
-                </div>
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">{% trans "Pending & In Progress" %}</h5>
-                    <p class="card-text fs-3 mt-auto">{{ active_requests_count|default:"N/A" }}</p>
-                    {# Corrected URL name for admin requests list #}
-                    <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-sm btn-outline-info mt-2">{% trans "Manage Requests" %}</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
 </div>
+
+<script src="{% static 'core/js/chart.min.js' %}"></script>
+<script>
+    // Chart.js Mock Data
+    const ctx = document.getElementById('requestTrendsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['January', 'February', 'March', 'April', 'May'],
+            datasets: [{
+                label: '{% trans "Requests" %}',
+                data: [20, 30, 15, 40, 25],
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+</script>
 {% endblock %}
