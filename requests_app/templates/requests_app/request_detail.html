@@ -1,111 +1,205 @@
 {% extends "core/base.html" %}
-{% load static i18n %}
+{% load static i18n %} {# Removed request_tags for now, assuming model methods for status badges in history #}
 
-{% block title %}
-    {{ page_title|default:"მოთხოვნის დეტალები" }} - {{ block.super }}
-{% endblock title %}
+{# --- 1. გვერდის სათაური ბრაუზერის ტაბისთვის --- #}
+{% block page_title_prefix %}
+    {% if request_obj and request_obj.id %}
+        {% trans "მოთხოვნა" %} #{{ request_obj.id }} -
+    {% else %}
+        {% trans "მოთხოვნის დეტალები" %} -
+    {% endif %}
+{% endblock page_title_prefix %}
 
+{# --- 2. გვერდის მთავარი H2 სათაური --- #}
+{% block page_header_title %}
+    {% if request_obj and request_obj.id %}
+        {% blocktrans with request_id=request_obj.id %}მოთხოვნის დეტალები #{{ request_id }}{% endblocktrans %}
+    {% else %}
+        {% trans "მოთხოვნის დეტალები" %}
+    {% endif %}
+{% endblock page_header_title %}
+
+{# --- 3. მოქმედების ღილაკები --- #}
+{% block page_action_buttons %}
+    {% if request_obj %}
+        {% if user.is_staff and request_obj.can_be_edited_by_staff %} {# USING MODEL METHOD #}
+            <a href="{% url 'requests_app:request_edit' pk=request_obj.pk %}" class="btn btn-outline-secondary">
+                <i class="ti ti-edit me-1"></i>{% trans "მოთხოვნის რედაქტირება" %}
+            </a>
+        {% endif %}
+        <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-primary">
+            <i class="ti ti-arrow-left me-1"></i>{% trans "სიისკენ დაბრუნება" %}
+        </a>
+    {% endif %}
+{% endblock page_action_buttons %}
+
+
+{# --- 4. ძირითადი შიგთავსი --- #}
 {% block content %}
-<div class="container mt-4 mb-4">
+{% if request_obj %}
     <div class="card shadow-sm">
-        <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
-            <h4 class="mb-0">{{ page_title|default:"აიტი სამსახურის მოთხოვნის დეტალები" }}</h4>
-            <div>
-                {% if user.is_staff and request_obj.status != 'closed' and request_obj.status != 'resolved' and request_obj.status != 'cancelled' %}
-                    <a href="{% url 'requests_app:request_edit' pk=request_obj.pk %}" class="btn btn-outline-secondary btn-sm me-2">
-                        <i class="fas fa-edit me-1"></i>მოთხოვნის რედაქტირება
-                    </a>
-                {% endif %}
-                <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-outline-primary btn-sm">
-                    <i class="fas fa-arrow-left me-1"></i>სიისკენ დაბრუნება
-                </a>
-            </div>
-        </div>
         <div class="card-body p-4">
             <div class="row">
-                <div class="col-lg-8">
-                    <h5 class="card-title mb-3">{{ request_obj.subject }}</h5>
-                    <hr>
-                    <dl class="row">
-                        <dt class="col-sm-4">მოთხოვნის ID:</dt>
-                        <dd class="col-sm-8">#{{ request_obj.id }}</dd>
+                <div class="col-lg-8 mb-4 mb-lg-0"> {# Added mb-4 mb-lg-0 for spacing on smaller screens #}
+                    <dl class="row gy-3">
+                        <dt class="col-sm-4 col-md-3 text-muted">{% trans "ID" %}:</dt> {# Added text-muted #}
+                        <dd class="col-sm-8 col-md-9 fw-bold">#{{ request_obj.id }}</dd> {# Added fw-bold #}
 
-                        <dt class="col-sm-4">სტატუსი:</dt>
-                        <dd class="col-sm-8">
-                            {% if request_obj.status == 'new' %}
-                                <span class="badge bg-primary">ახალი</span>
-                            {% elif request_obj.status == 'in_progress' %}
-                                <span class="badge bg-info text-dark">მუშავდება</span>
-                            {% elif request_obj.status == 'on_hold' %}
-                                <span class="badge bg-warning text-dark">შეჩერებული</span>
-                            {% elif request_obj.status == 'resolved' %}
-                                <span class="badge bg-success">დასრულებული</span>
-                            {% elif request_obj.status == 'closed' %}
-                                <span class="badge bg-secondary">დახურული</span>
-                            {% elif request_obj.status == 'cancelled' %}
-                                <span class="badge bg-danger">გაუქმებული</span>
-                            {% else %}
-                                <span class="badge bg-light text-dark">{{ request_obj.get_status_display }}</span>
-                            {% endif %}
+                        <dt class="col-sm-4 col-md-3 text-muted">{% trans "საგანი" %}:</dt>
+                        <dd class="col-sm-8 col-md-9">{{ request_obj.subject|default:"-" }}</dd>
+
+                        <dt class="col-sm-4 col-md-3 text-muted">{% trans "სტატუსი" %}:</dt>
+                        <dd class="col-sm-8 col-md-9">
+                            <span class="badge {{ request_obj.get_status_badge_class }}">{{ request_obj.get_status_display }}</span>
                         </dd>
 
-                        <dt class="col-sm-4">პრიორიტეტი:</dt>
-                        <dd class="col-sm-8">{{ request_obj.get_priority_display|default:"N/A" }}</dd>
+                        <dt class="col-sm-4 col-md-3 text-muted">{% trans "პრიორიტეტი" %}:</dt>
+                        <dd class="col-sm-8 col-md-9">
+                            <span class="badge {{ request_obj.get_priority_badge_class }}"> {# USING MODEL METHOD #}
+                                {{ request_obj.get_priority_display|default:"-" }}
+                            </span>
+                        </dd>
 
-                        <dt class="col-sm-4">მოთხოვნის ტიპი:</dt>
-                        <dd class="col-sm-8">{{ request_obj.request_type.name|default:"N/A" }}</dd>
+                        {% if request_obj.request_type %}
+                        <dt class="col-sm-4 col-md-3 text-muted">{% trans "მოთხოვნის ტიპი" %}:</dt>
+                        <dd class="col-sm-8 col-md-9">{{ request_obj.request_type.name|default:"-" }}</dd>
+                        {% endif %}
+
+                        {% if request_obj.department_location %}
+                            <dt class="col-sm-4 col-md-3 text-muted">{% trans "დეპარტამენტი/ლოკაცია" %}:</dt>
+                            <dd class="col-sm-8 col-md-9">{{ request_obj.department_location }}</dd>
+                        {% endif %}
+
+                        {% if request_obj.desired_completion_date %}
+                            <dt class="col-sm-4 col-md-3 text-muted">{% trans "სასურველი დასრულების თარიღი" %}:</dt>
+                            <dd class="col-sm-8 col-md-9">{{ request_obj.desired_completion_date|date:"Y-m-d" }}</dd>
+                        {% endif %}
                     </dl>
 
                     <div class="mt-4">
-                        <h6>აღწერა:</h6>
+                        <h5 class="mb-2">{% trans "აღწერა" %}:</h5> {# Changed to h5 and added mb-2 #}
                         <div class="p-3 bg-light rounded border" style="white-space: pre-wrap;">
-                            {{ request_obj.description|default:"აღწერა მითითებული არ არის." }}
+                            {{ request_obj.description|default:_("აღწერა მითითებული არ არის.") }}
                         </div>
                     </div>
 
                     {% if request_obj.resolution_notes %}
                     <div class="mt-4">
-                        <h6>დასრულების შენიშვნა:</h6>
-                        <div class="p-3 bg-light rounded border" style="white-space: pre-wrap;">
-                            {{ request_obj.resolution_notes }}
+                        <h5 class="mb-2">{% trans "შესრულების/დახურვის შენიშვნა" %}:</h5>
+                        <div class="p-3 bg-azure-lt rounded border" style="white-space: pre-wrap;">
+                            {{ request_obj.resolution_notes|linebreaksbr }}
                         </div>
                     </div>
                     {% endif %}
                 </div>
-                <div class="col-lg-4 mt-4 mt-lg-0">
-                    <div class="card mb-3">
-                        <div class="card-header">ავტორი & დროები</div>
+
+                <div class="col-lg-4"> {# Removed mt-4 mt-lg-0, handled by parent div's mb #}
+                    <div class="card mb-3 shadow-sm"> {# Added shadow-sm #}
+                        <div class="card-header"><h3 class="card-title">{% trans "ავტორი & დროები" %}</h3></div>
                         <ul class="list-group list-group-flush">
-                            <li class="list-group-item"><strong>ავტორი:</strong> {{ request_obj.requested_by.get_full_name|default:request_obj.requested_by.username }}</li>
-                            <li class="list-group-item"><strong>განყოფილება:</strong> {{ request_obj.requested_by.profile.department.name|default:"N/A" }}</li>
-                            <li class="list-group-item"><strong>შექმნის დრო:</strong> {{ request_obj.created_at|date:"Y-m-d H:i" }}</li>
-                            <li class="list-group-item"><strong>განახლდა:</strong> {{ request_obj.updated_at|date:"Y-m-d H:i" }}</li>
-                            {% if request_obj.completed_at %}
-                            <li class="list-group-item"><strong>დასრულების დრო:</strong> {{ request_obj.completed_at|date:"Y-m-d H:i" }}</li>
+                            <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "ავტორი" %}:</strong></span> <span>{{ request_obj.requested_by.get_full_name|default:request_obj.requested_by.username|default:"-" }}</span></li>
+                            <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "შექმნის დრო" %}:</strong></span> <span>{{ request_obj.created_at|date:"Y-m-d H:i" }}</span></li>
+                            {% if request_obj.date_assigned %}
+                            <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "მინიჭების თარიღი" %}:</strong></span> <span class="text-success">{{ request_obj.date_assigned|date:"Y-m-d H:i" }}</span></li>
                             {% endif %}
+                            {% if request_obj.resolved_at %}
+                            <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "დასრულების/უარყოფის თარიღი" %}:</strong></span> <span class="text-danger">{{ request_obj.resolved_at|date:"Y-m-d H:i" }}</span></li>
+                            {% endif %}
+                             <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "ბოლო განახლება" %}:</strong></span> <span>{{ request_obj.updated_at|date:"Y-m-d H:i" }}</span></li>
                         </ul>
                     </div>
-                    <div class="card">
-                        <div class="card-header">მინიჭება & ტექნიკა</div>
+                    <div class="card shadow-sm"> {# Added shadow-sm #}
+                        <div class="card-header"><h3 class="card-title">{% trans "მინიჭება & ტექნიკა" %}</h3></div>
                         <ul class="list-group list-group-flush">
-                            <li class="list-group-item"><strong>მინიჭებული:</strong> {{ request_obj.assigned_to.get_full_name|default:"მიუნიჭებელი" }}</li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><strong>{% trans "მინიჭებული" %}:</strong></span>
+                                {% if request_obj.assigned_to %}
+                                    <span>{{ request_obj.assigned_to.get_full_name|default:request_obj.assigned_to.username }}</span>
+                                {% else %}
+                                    <span class="text-muted">{% trans "მიუნიჭებელი" %}</span>
+                                {% endif %}
+                            </li>
                             {% if request_obj.related_equipment %}
                             <li class="list-group-item">
-                                <strong>დაკავშირებული ტექნიკა:</strong>
-                                {{ request_obj.related_equipment.name }}
-                                <small class="text-muted">({{ request_obj.related_equipment.inventory_number|default:"ინვენტარის № არაა" }})</small>
+                                <strong>{% trans "დაკავშირებული ტექნიკა" %}:</strong>
+                                <a href="{% url 'inventory:equipment_detail' request_obj.related_equipment.pk %}" class="d-block stretched-link">{{ request_obj.related_equipment.name|default:"-" }}</a>
+                                <small class="d-block text-muted">({{ request_obj.related_equipment.inventory_number|default:_("ინვენტარის № არაა") }})</small>
                             </li>
                             {% else %}
-                            <li class="list-group-item"><strong>დაკავშირებული ტექნიკა:</strong> N/A</li>
+                            <li class="list-group-item"><strong>{% trans "დაკავშირებული ტექნიკა" %}:</strong> <span class="text-muted">-</span></li>
                             {% endif %}
                         </ul>
                     </div>
                 </div>
             </div>
+
+            {# --- Request Updates / History --- #}
+            <div class="mt-4 pt-4 border-top">
+                <h4 class="mb-3">{% trans "განახლებების ისტორია" %}</h4>
+                {% with updates=request_obj.updates.all %}
+                {% if updates %}
+                    <div class="list-group list-group-flush">
+                    {% for update_entry in updates %}
+                        <div class="list-group-item py-3 px-0"> {# Added px-0 for full width text #}
+                            <div class="row align-items-start"> {# Changed to align-items-start #}
+                                <div class="col-auto">
+                                    <span class="avatar avatar-sm rounded"> {# Added rounded #}
+                                        {{ update_entry.updated_by.username.0|upper|default:"S" }}
+                                    </span>
+                                </div>
+                                <div class="col"> {# Removed text-truncate, let it wrap #}
+                                    <div>
+                                        <strong>{{ update_entry.updated_by.get_full_name|default:update_entry.updated_by.username|default:_("სისტემა") }}</strong>
+                                        {% if update_entry.old_status and update_entry.new_status and update_entry.old_status != update_entry.new_status %}
+                                            <span class="text-muted small ms-1"> {# Added small class #}
+                                                {% trans "შეცვალა სტატუსი" %}
+                                                <span class="badge {{ update_entry.get_old_status_badge_html_class }}">{{ update_entry.get_old_status_display_safe }}</span>
+                                                {% trans "-დან" %}
+                                                <span class="badge {{ update_entry.get_new_status_badge_html_class }}">{{ update_entry.get_new_status_display_safe }}</span>
+                                                {% trans "-ზე." %}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    {% if update_entry.notes %} {# Display notes only if they exist #}
+                                    <div class="text-muted small mt-1" style="white-space: pre-wrap;">{{ update_entry.notes|linebreaksbr }}</div> {# Added pre-wrap and small #}
+                                    {% endif %}
+                                </div>
+                                <div class="col-auto text-end">
+                                    <small class="text-muted" title="{{ update_entry.update_time|date:"Y-m-d H:i:s" }}">
+                                        {{ update_entry.update_time|timesince }} {% trans "წინ" %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">{% trans "განახლებები არ არის." %}</p>
+                {% endif %}
+                {% endwith %}
+            </div>
         </div>
-        <div class="card-footer text-muted text-center">
-            ბოლოს განახლდა {{ request_obj.updated_at|timesince }} წინ
+
+        <div class="card-footer text-muted text-center small py-2">
+            {% if request_obj.updated_at %}
+                {% blocktrans with time_since=request_obj.updated_at|timesince %}ბოლოს განახლდა {{ time_since }} წინ{% endblocktrans %}
+                (ID: {{ request_obj.pk }})
+            {% else %}
+                {% trans "განახლების დრო უცნობია" %} (ID: {{ request_obj.pk }})
+            {% endif %}
         </div>
     </div>
-</div>
+{% else %}
+    <div class="alert alert-warning shadow-sm" role="alert"> {# Added shadow-sm #}
+      <i class="ti ti-alert-triangle me-2"></i>{% trans "მოთხოვნა ვერ მოიძებნა." %}
+    </div>
+{% endif %}
 {% endblock content %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Your JS here if needed
+        });
+    </script>
+{% endblock extra_js %}
