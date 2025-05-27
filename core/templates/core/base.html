@@ -1,0 +1,83 @@
+{% load static i18n %}
+<!DOCTYPE html>
+<html lang="{{ request.LANGUAGE_CODE|default:"ka" }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% trans "აიტი ინვენტარის სისტემა" %}{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    <style>
+        body {
+            padding-top: 56px; /* Default navbar height for sticky-top */
+            background-color: #f8f9fa; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
+        }
+        .navbar {
+            /* border-bottom: 1px solid #e9ecef; */ 
+        }
+        .nav-link.active {
+            color: #0d6efd !important; 
+           /* border-bottom: 2px solid #0d6efd; */
+           /* margin-bottom: -2px; */
+        }
+        .content-wrapper {
+            padding-top: 1.5rem; 
+            padding-bottom: 1.5rem; 
+            flex-grow: 1; 
+        }
+        .alert {
+            margin-bottom: 1.5rem;
+        }
+        .footer {
+            background-color: #e9ecef; 
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    
+    <div class="container">
+        {% include "core/_navigation.html" %}
+    </div>
+
+    <div class="container content-wrapper">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% trans 'დახურვა' %}"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% block content %}
+        <!-- გვერდის სპეციფიკური კონტენტი აქ იქნება ჩასმული -->
+        {% endblock %}
+    </div>
+
+    <footer class="footer"> 
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between small">
+                <div class="text-muted">Copyright &copy; {% now "Y" %} {% trans "აიტი ინვენტარის სისტემა" %}</div>
+                <div>
+                    <a href="#" class="text-decoration-none">{% trans "კონფიდენციალურობის პოლიტიკა" %}</a>
+                    &middot;
+                    <a href="#" class="text-decoration-none">{% trans "წესები და პირობები" %}</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

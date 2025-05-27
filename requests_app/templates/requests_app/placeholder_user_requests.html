@@ -1,0 +1,21 @@
+{# Version: 1.0 - 2025-05-26 - Placeholder template for user viewing their requests. #}
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - საავადმყოფოს IT ინვენტარი{% endblock title %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ page_title }}</h1>
+    <div class="alert alert-info" role="alert">
+        <h4 class="alert-heading">მომზადების პროცესშია!</h4>
+        <p>თქვენი IT მოთხოვნების სანახავი განყოფილება ამჟამად დამუშავების რეჟიმშია.</p>
+        <hr>
+        <p class="mb-0">
+            გთხოვთ, შეამოწმეთ მოგვიანებით. თუ გჭირდებათ სასწრაფო დახმარება, დაუკავშირდით IT სამსახურს ან გამოიყენეთ 
+            <a href="{% url 'admin:index' %}" class="alert-link" target="_blank">ადმინისტრატორის ინტერფეისი (თუ გაქვთ წვდომა)</a>.
+        </p>
+    </div>
+    <a href="{% url 'core:dashboard' %}" class="btn btn-secondary mt-3">დაბრუნება დეშბორდზე</a>
+</div>
+{% endblock content %}

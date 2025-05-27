@@ -1,0 +1,109 @@
+{% extends "core/base.html" %}
+{% load static i18n %}
+
+{% block title %}
+    {% comment %} Using your existing title logic {% endcomment %}
+    {% if page_title %}
+        {{ page_title }}
+    {% else %}
+        {% if object %}
+            {% trans "Edit Request" %}
+        {% else %}
+            {% trans "Create New IT Request" %}
+        {% endif %}
+    {% endif %} - {% trans "IT Inventory System" %}
+{% endblock title %}
+
+{% block content %}
+<div class="container mt-4 mb-5"> {# Added mb-5 for consistency #}
+    <div class="row justify-content-center">
+        <div class="col-12"> {# MODIFIED: Changed from col-md-8 col-lg-10 to col-12 for full width #}
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark"> {# MODIFIED: Changed background for differentiation, can be bg-primary text-white #}
+                    <h4 class="mb-0">
+                        <i class="fas {% if object %}fa-edit{% else %}fa-clipboard-list{% endif %} me-2"></i> {# Added icon consistent with previous suggestion #}
+                        {% comment %} Using your existing form title logic {% endcomment %}
+                        {% if form_title %}
+                            {{ form_title }}
+                        {% else %}
+                            {% if object %}
+                                {% blocktrans with subject=object.subject|truncatewords:5 %}Edit Request: {{ subject }}{% endblocktrans %}
+                            {% else %}
+                                {% trans "New IT Request Form" %}
+                            {% endif %}
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body p-4"> {# MODIFIED: Added p-4 for consistent padding #}
+                    <form method="post" novalidate enctype="multipart/form-data"> {# Added enctype for potential file uploads #}
+                        {% csrf_token %}
+                        {{ form.media }}
+                        {% for hidden_field in form.hidden_fields %}
+                            {{ hidden_field }}
+                        {% endfor %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger py-2 mb-4"> {# Added py-2 mb-4 for consistency #}
+                                {% for error in form.non_field_errors %}
+                                    <p class="mb-0">{{ error }}</p> {# Made it <p> for consistency #}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {% comment %} Your manual field rendering loop - retained {% endcomment %}
+                        {% for field in form.visible_fields %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label fw-medium"> {# Added fw-medium for label consistency #}
+                                    {{ field.label }}
+                                    {% if field.field.required %}
+                                        <span class="text-danger ms-1">*</span> {# Added ms-1 for spacing #}
+                                    {% endif %}
+                                </label>
+                                {{ field }} {# Assuming your widgets have 'form-control' or 'form-select' via forms.py #}
+                                {% if field.help_text %}
+                                    <small class="form-text text-muted mt-1 d-block">{{ field.help_text|safe }}</small> {# Added mt-1 d-block #}
+                                {% endif %}
+                                {% for error in field.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                        
+                        <hr class="my-4"> {# Consistent hr styling #}
+                        <div class="d-flex justify-content-end gap-2"> {# MODIFIED: Changed to d-flex justify-content-end gap-2 for button alignment #}
+                            <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> {% trans "Cancel" %} {# MODIFIED: Changed text to "Cancel" and added icon #}
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas {% if object %}fa-save{% else %}fa-paper-plane{% endif %} me-1"></i> {# MODIFIED: Added icon and consistent me-1 #}
+                                {% comment %} Using your existing submit button text logic {% endcomment %}
+                                {% if submit_button_text %}
+                                    {{ submit_button_text }}
+                                {% else %}
+                                    {% if object %}
+                                        {% trans "Save Changes" %}
+                                    {% else %}
+                                        {% trans "Submit Request" %}
+                                    {% endif %}
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% comment %} Your original script block - retained {% endcomment %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var dateInputs = document.querySelectorAll('input[type="date"]');
+        dateInputs.forEach(function(input) {
+            // If you were using a date picker, initialize it here
+            // e.g. flatpickr(input, { dateFormat: "Y-m-d" });
+        });
+    });
+</script>
+{% endblock content %}

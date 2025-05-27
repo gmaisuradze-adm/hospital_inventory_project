@@ -1,0 +1,144 @@
+{% extends "core/base.html" %}
+{% load static i18n %}
+
+{% block title %}{{ page_title|default:"ინვენტარის სია" }} - საავადმყოფოს IT ინვენტარი{% endblock title %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>{{ page_title|default:"ინვენტარის სია" }}</h1>
+        {% if perms.inventory.add_equipment %}
+            <a href="{% url 'inventory:equipment_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-1"></i> ახალი მოწყობილობის დამატება
+            </a>
+        {% endif %}
+    </div>
+
+    <form method="get" class="mb-4 p-3 border rounded bg-light">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="search_query" class="form-label">ძიება</label>
+                <input type="search" name="q" id="search_query" class="form-control" placeholder="ტეგი, სახელი..." value="{{ request.GET.q }}"> {# Changed type to search #}
+            </div>
+            <div class="col-md-3">
+                <label for="category_filter" class="form-label">კატეგორია</label>
+                <select name="category" id="category_filter" class="form-select">
+                    <option value="">ყველა კატეგორია</option>
+                    {% for category in categories_for_filter %}
+                        <option value="{{ category.pk }}" {% if request.GET.category == category.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="status_filter" class="form-label">სტატუსი</label>
+                <select name="status" id="status_filter" class="form-select">
+                    <option value="">ყველა სტატუსი</option>
+                    {% for status in statuses_for_filter %}
+                        <option value="{{ status.pk }}" {% if request.GET.status == status.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ status.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-success w-100">გაფილტვრა</button>
+            </div>
+            {% if request.GET.q or request.GET.category or request.GET.status %}
+            <div class="col-md-2">
+                 <a href="{% url 'inventory:equipment_list' %}" class="btn btn-outline-secondary w-100">გასუფთავება</a>
+            </div>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-3" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if equipment_list %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th class="border-bottom border-2">ინვენტარის ტეგი</th>
+                        <th class="border-bottom border-2">სახელი</th>
+                        <th class="border-bottom border-2">კატეგორია</th>
+                        <th class="border-bottom border-2">სტატუსი</th>
+                        <th class="border-bottom border-2">ლოკაცია</th>
+                        <th class="border-bottom border-2">მინიჭებული</th>
+                        <th class="border-bottom border-2">ქმედებები</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in equipment_list %}
+                    <tr class="align-middle">
+                        <td class="border-bottom">
+                            <a href="{% url 'inventory:equipment_detail' item.pk %}">{{ item.asset_tag|default:"მიუწვდომელია" }}</a>
+                        </td>
+                        <td class="border-bottom">{{ item.name }}</td>
+                        <td class="border-bottom">{{ item.category.name|default:"მიუწვდომელია" }}</td>
+                        <td class="border-bottom">
+                            <span class="badge 
+                                {% if item.status.name == 'In Use' %}bg-success
+                                {% elif item.status.name == 'Under Repair' %}bg-warning text-dark
+                                {% elif item.status.name == 'In Storage' %}bg-info text-dark
+                                {% elif item.status.name == 'Decommissioned' %}bg-danger
+                                {% else %}bg-secondary{% endif %}">
+                                {{ item.status.name|default:"მიუწვდომელია" }}
+                            </span>
+                        </td>
+                        <td class="border-bottom">{{ item.current_location.name|default:"მიუწვდომელია" }}</td>
+                        <td class="border-bottom">{{ item.assigned_to.username|default:"მინიჭებული არ არის" }}</td>
+                        <td class="border-bottom">
+                            <a href="{% url 'inventory:equipment_detail' item.pk %}" class="btn btn-sm btn-outline-primary mb-1 me-1" title="ნახვა"><i class="fas fa-eye"></i></a>
+                            {% if perms.inventory.change_equipment %}
+                                <a href="{% url 'inventory:equipment_update' item.pk %}" class="btn btn-sm btn-outline-secondary mb-1 me-1" title="რედაქტირება"><i class="fas fa-edit"></i></a>
+                            {% endif %}
+                            {% if perms.inventory.delete_equipment %}
+                                <a href="{% url 'inventory:equipment_delete' item.pk %}" class="btn btn-sm btn-outline-danger mb-1" title="წაშლა"><i class="fas fa-trash-alt"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+            <nav aria-label="გვერდების გადართვა" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&laquo; პირველი</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">წინა</a></li>
+                    {% endif %}
+                    <li class="page-item disabled"><a class="page-link" href="#">გვერდი {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</a></li>
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">შემდეგი</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">ბოლო &raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info text-center mt-3" role="alert"> {# Added text-center for consistency #}
+            <i class="fas fa-info-circle fa-3x text-muted mb-3"></i> {# Added icon for consistency #}
+            {% if request.GET.q or request.GET.category or request.GET.status %}
+                <p class="lead">მოწყობილობები მითითებული კრიტერიუმებით ვერ მოიძებნა. <a href="{% url 'inventory:equipment_list' %}">ფილტრების გასუფთავება</a>.</p> {# Wrapped in p.lead #}
+            {% else %}
+                <p class="lead">მოწყობილობები ვერ მოიძებნა.</p> {# Wrapped in p.lead #}
+            {% endif %}
+            {% if perms.inventory.add_equipment and not request.GET.q and not request.GET.category and not request.GET.status %}
+                <p>შეგიძლიათ <a href="{% url 'inventory:equipment_create' %}">დაამატოთ ახალი მოწყობილობა</a>.</p> {# Wrapped in p, removed <br> #}
+            {% endif %}
+        </div>
+    {% endif %}
+    {# REMOVED: Return to Dashboard button #}
+</div>
+{% endblock content %}

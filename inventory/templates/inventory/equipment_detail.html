@@ -1,0 +1,113 @@
+{% extends "core/base.html" %}
+{% load static i18n %} {# Added i18n for trans tag, if you use it for button text #}
+
+{% block title %}{% trans "Equipment Details" %}: {{ equipment.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">{% trans "Dashboard" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'inventory:equipment_list' %}">{% trans "Inventory" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ equipment.name|truncatewords:5 }}</li>
+        </ol>
+    </nav>
+
+    <h2>
+        <i class="fas {% if equipment.category.icon %}{{ equipment.category.icon }}{% else %}fa-cube{% endif %} me-2"></i>
+        {% trans "Equipment Details" %}: {{ equipment.name }}
+    </h2>
+    <hr>
+
+    {% include "core/includes/messages.html" %} {# Ensure this path is correct for your messages include #}
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            {% trans "Details for Asset Tag" %}: <strong>{{ equipment.asset_tag|default:"N/A" }}</strong>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>{% trans "Asset Tag" %}:</strong> {{ equipment.asset_tag|default:"N/A" }}</p>
+                    <p><strong>{% trans "Name" %}:</strong> {{ equipment.name }}</p>
+                    <p><strong>{% trans "Serial Number" %}:</strong> {{ equipment.serial_number|default:_("Not Available") }}</p>
+                    <p><strong>{% trans "Category" %}:</strong> {{ equipment.category.name|default:_("Not Available") }}</p>
+                    <p>
+                        <strong>{% trans "Status" %}:</strong>
+                        <span class="badge 
+                            {% if equipment.status.name == 'In Use' or equipment.status.name == 'გამოყენებაშია' %}bg-success
+                            {% elif equipment.status.name == 'Under Repair' or equipment.status.name == 'შეკეთების პროცესშია' %}bg-warning text-dark
+                            {% elif equipment.status.name == 'In Storage' or equipment.status.name == 'საწყობშია' %}bg-info text-dark
+                            {% elif equipment.status.name == 'Decommissioned' or equipment.status.name == 'ექსპლუატაციიდან გამოსული' or equipment.status.is_decommissioned %}bg-danger
+                            {% else %}bg-secondary{% endif %}">
+                            {{ equipment.status.name|default:_("Not Available") }}
+                        </span>
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>{% trans "Current Location" %}:</strong> {{ equipment.current_location.name|default:_("Not Available") }}</p>
+                    <p><strong>{% trans "Assigned To" %}:</strong>
+                        {% if equipment.assigned_to %}
+                            {{ equipment.assigned_to.get_full_name|default:equipment.assigned_to.username }}
+                        {% else %}
+                            {% trans "Not Assigned" %}
+                        {% endif %}
+                    </p>
+                    <p><strong>{% trans "Supplier" %}:</strong> {{ equipment.supplier.name|default:_("Not Available") }}</p>
+                    <p><strong>{% trans "Purchase Date" %}:</strong> {{ equipment.purchase_date|date:"Y-m-d"|default:_("Not Available") }}</p>
+                    <p><strong>{% trans "Purchase Cost" %}:</strong> {% if equipment.purchase_cost %}{{ equipment.purchase_cost|floatformat:2 }} ₾{% else %}{% trans "Not Available" %}{% endif %}</p> {# Changed $ to ₾ #}
+                    <p><strong>{% trans "Warranty Expiry Date" %}:</strong> {{ equipment.warranty_expiry_date|date:"Y-m-d"|default:_("Not Available") }}</p>
+                </div>
+            </div>
+            {% if equipment.notes %}
+            <hr>
+            <h5>{% trans "Notes" %}:</h5>
+            <div class="bg-light p-3 rounded border">
+                {{ equipment.notes|linebreaksbr }}
+            </div>
+            {% endif %}
+            <hr>
+            <p class="text-muted small">
+                {% trans "Last Updated" %}: {{ equipment.last_updated|date:"Y-m-d H:i" }} ({% trans "by" %} {{ equipment.updated_by.username|default:_("System") }}) <br>
+                {% trans "Date Added" %}: {{ equipment.date_added|date:"Y-m-d H:i" }} ({% trans "by" %} {{ equipment.added_by.username|default:_("System") }})
+            </p>
+        </div>
+        <div class="card-footer text-end">
+            {% if perms.inventory.change_equipment %}
+            <a href="{% url 'inventory:equipment_update' equipment.pk %}" class="btn btn-warning">
+                <i class="fas fa-edit me-1"></i> {% trans "Edit" %}
+            </a>
+            {% endif %}
+
+            {% if perms.inventory.change_equipment and equipment.status and not equipment.status.is_decommissioned %}
+            <a href="{% url 'inventory:equipment_mark_write_off' pk=equipment.pk %}" class="btn btn-outline-danger ms-1">
+                <i class="fas fa-exclamation-triangle me-1"></i> {% trans "Mark for Write-Off" %}
+            </a>
+            {% endif %}
+
+            {% if perms.inventory.delete_equipment %}
+            <a href="{% url 'inventory:equipment_delete' equipment.pk %}" class="btn btn-danger ms-1">
+                <i class="fas fa-trash-alt me-1"></i> {% trans "Delete" %}
+            </a>
+            {% endif %}
+            <a href="{% url 'inventory:equipment_list' %}" class="btn btn-secondary ms-1">
+                <i class="fas fa-list me-1"></i> {% trans "Back to List" %}
+            </a>
+        </div>
+    </div>
+
+    {% comment %} Placeholder for Maintenance History and Assignment History sections later {% endcomment %}
+    {% comment %}
+    <div class="mt-4">
+        <h4>{% trans "Maintenance History" %}</h4>
+        <!-- Logic to display maintenance history -->
+    </div>
+
+    <div class="mt-4">
+        <h4>{% trans "Assignment History" %}</h4>
+        <!-- Logic to display assignment history -->
+    </div>
+    {% endcomment %}
+
+</div>
+{% endblock %}

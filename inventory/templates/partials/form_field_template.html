@@ -1,0 +1,28 @@
+{% comment %} Single form field rendering template. Expects 'field' in context. {% endcomment %}
+{% if field.field.widget.input_type == 'checkbox' %}
+    <div class="form-check mb-3"> {# Added mb-3 here for consistency if used standalone #}
+        {{ field }} {# Widget should have 'form-check-input' from forms.py #}
+        <label for="{{ field.id_for_label }}" class="form-check-label">{{ field.label }}{% if field.field.required %}<span class="text-danger ms-1">*</span>{% endif %}</label>
+        {% if field.help_text %}
+            <small class="form-text text-muted d-block mt-1">{{ field.help_text|safe }}</small>
+        {% endif %}
+        {% for error in field.errors %}
+            <div class="invalid-feedback d-block">
+                {{ error }}
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="mb-3"> {# Default wrapper for non-checkbox fields #}
+        <label for="{{ field.id_for_label }}" class="form-label fw-medium">{{ field.label }}{% if field.field.required %}<span class="text-danger ms-1">*</span>{% endif %}</label>
+        {{ field }} {# Widget should have 'form-control' or 'form-select' from forms.py #}
+        {% if field.help_text %}
+            <small class="form-text text-muted mt-1 d-block">{{ field.help_text|safe }}</small>
+        {% endif %}
+        {% for error in field.errors %}
+            <div class="invalid-feedback d-block">
+                {{ error }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}

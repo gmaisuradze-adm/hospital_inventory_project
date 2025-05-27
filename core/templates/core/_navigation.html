@@ -1,0 +1,103 @@
+{% load i18n %}
+{% load static %}
+
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+    {# MODIFIED: Changed icon to fa-clinic-medical for thematic relevance #}
+    <a class="navbar-brand ps-2" href="{% url 'core:dashboard' %}" aria-label="{% trans 'მთავარი გვერდი' %}">
+        <i class="fas fa-clinic-medical text-primary"></i> {# Changed icon to fa-clinic-medical #}
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="{% trans 'მენიუს გახსნა' %}">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.view_name == 'core:dashboard' %}active fw-bold{% endif %}" href="{% url 'core:dashboard' %}">
+                    <i class="fas fa-chart-line fa-fw me-2 text-primary"></i>
+                    <span style="font-size: 1.02rem;">{% trans "დეშბორდი" %}</span>
+                </a>
+            </li>
+
+            {% if user.is_authenticated %}
+                {% if user.is_staff %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.app_name == 'inventory' %}active fw-bold{% endif %}" href="{% url 'inventory:equipment_list' %}">
+                            <i class="fas fa-laptop-house fa-fw me-2 text-primary"></i>
+                            <span style="font-size: 1.02rem;">{% trans "ინვენტარი" %}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.app_name == 'warehouse' and request.resolver_match.url_name == 'stockitem_list' %}active fw-bold{% endif %}" href="{% url 'warehouse:stockitem_list' %}">
+                            <i class="fas fa-cubes fa-fw me-2 text-primary"></i>
+                            <span style="font-size: 1.02rem;">{% trans "საწყობი" %}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.app_name == 'requests_app' and request.resolver_match.url_name == 'admin_request_list' %}active fw-bold{% endif %}" href="{% url 'requests_app:admin_request_list' %}">
+                            <i class="fas fa-tasks fa-fw me-2 text-primary"></i>
+                            <span style="font-size: 1.02rem;">{% trans "ყველა მოთხოვნა" %}</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.app_name == 'inventory' %}active fw-bold{% endif %}" href="{% url 'inventory:equipment_list' %}">
+                            <i class="fas fa-tv fa-fw me-2 text-primary"></i>
+                            <span style="font-size: 1.02rem;">{% trans "ინვენტარი" %}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.app_name == 'warehouse' and request.resolver_match.url_name == 'stockitem_list' %}active fw-bold{% endif %}" href="{% url 'warehouse:stockitem_list' %}">
+                            <i class="fas fa-archive fa-fw me-2 text-primary"></i>
+                            <span style="font-size: 1.02rem;">{% trans "საწყობი" %}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.app_name == 'requests_app' and request.resolver_match.url_name == 'user_request_list' %}active fw-bold{% endif %}" href="{% url 'requests_app:user_request_list' %}">
+                            <i class="fas fa-user-tag fa-fw me-2 text-primary"></i>
+                            <span style="font-size: 1.02rem;">{% trans "ჩემი მოთხოვნები" %}</span>
+                        </a>
+                    </li>
+                {% endif %}
+            {% endif %}
+        </ul>
+
+        <ul class="navbar-nav ms-auto">
+            {% if user.is_authenticated %}
+                {% if user.is_superuser %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.app_name == 'admin' and request.resolver_match.url_name == 'index' %}active fw-bold{% endif %}" href="{% url 'admin:index' %}" target="_blank" rel="noopener noreferrer">
+                        <i class="fas fa-user-shield fa-fw me-1"></i>{% trans "ადმინ პანელი" %}
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarUserDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle fa-fw me-1"></i>{{ user.get_username }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarUserDropdown">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-id-card fa-fw me-2"></i>{% trans "პროფილი" %}</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form id="logout-form-nav" method="post" action="{% url 'core:logout' %}" class="mb-0">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item"><i class="fas fa-sign-out-alt fa-fw me-2"></i>{% trans "გასვლა" %}</button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+            {% else %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.view_name == 'core:login' %}active fw-bold{% endif %}" href="{% url 'core:login' %}">
+                        <i class="fas fa-sign-in-alt fa-fw me-1"></i>{% trans "შესვლა" %}
+                    </a>
+                </li>
+                 <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.view_name == 'core:register' %}active fw-bold{% endif %}" href="{% url 'core:register' %}">
+                        <i class="fas fa-user-plus fa-fw me-1"></i>{% trans "რეგისტრაცია" %}
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>

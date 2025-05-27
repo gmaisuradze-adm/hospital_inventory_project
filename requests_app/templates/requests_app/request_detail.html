@@ -1,0 +1,111 @@
+{% extends "core/base.html" %}
+{% load static i18n %}
+
+{% block title %}
+    {{ page_title|default:"მოთხოვნის დეტალები" }} - {{ block.super }}
+{% endblock title %}
+
+{% block content %}
+<div class="container mt-4 mb-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
+            <h4 class="mb-0">{{ page_title|default:"აიტი სამსახურის მოთხოვნის დეტალები" }}</h4>
+            <div>
+                {% if user.is_staff and request_obj.status != 'closed' and request_obj.status != 'resolved' and request_obj.status != 'cancelled' %}
+                    <a href="{% url 'requests_app:request_edit' pk=request_obj.pk %}" class="btn btn-outline-secondary btn-sm me-2">
+                        <i class="fas fa-edit me-1"></i>მოთხოვნის რედაქტირება
+                    </a>
+                {% endif %}
+                <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i>სიისკენ დაბრუნება
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-lg-8">
+                    <h5 class="card-title mb-3">{{ request_obj.subject }}</h5>
+                    <hr>
+                    <dl class="row">
+                        <dt class="col-sm-4">მოთხოვნის ID:</dt>
+                        <dd class="col-sm-8">#{{ request_obj.id }}</dd>
+
+                        <dt class="col-sm-4">სტატუსი:</dt>
+                        <dd class="col-sm-8">
+                            {% if request_obj.status == 'new' %}
+                                <span class="badge bg-primary">ახალი</span>
+                            {% elif request_obj.status == 'in_progress' %}
+                                <span class="badge bg-info text-dark">მუშავდება</span>
+                            {% elif request_obj.status == 'on_hold' %}
+                                <span class="badge bg-warning text-dark">შეჩერებული</span>
+                            {% elif request_obj.status == 'resolved' %}
+                                <span class="badge bg-success">დასრულებული</span>
+                            {% elif request_obj.status == 'closed' %}
+                                <span class="badge bg-secondary">დახურული</span>
+                            {% elif request_obj.status == 'cancelled' %}
+                                <span class="badge bg-danger">გაუქმებული</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark">{{ request_obj.get_status_display }}</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4">პრიორიტეტი:</dt>
+                        <dd class="col-sm-8">{{ request_obj.get_priority_display|default:"N/A" }}</dd>
+
+                        <dt class="col-sm-4">მოთხოვნის ტიპი:</dt>
+                        <dd class="col-sm-8">{{ request_obj.request_type.name|default:"N/A" }}</dd>
+                    </dl>
+
+                    <div class="mt-4">
+                        <h6>აღწერა:</h6>
+                        <div class="p-3 bg-light rounded border" style="white-space: pre-wrap;">
+                            {{ request_obj.description|default:"აღწერა მითითებული არ არის." }}
+                        </div>
+                    </div>
+
+                    {% if request_obj.resolution_notes %}
+                    <div class="mt-4">
+                        <h6>დასრულების შენიშვნა:</h6>
+                        <div class="p-3 bg-light rounded border" style="white-space: pre-wrap;">
+                            {{ request_obj.resolution_notes }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-lg-4 mt-4 mt-lg-0">
+                    <div class="card mb-3">
+                        <div class="card-header">ავტორი & დროები</div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><strong>ავტორი:</strong> {{ request_obj.requested_by.get_full_name|default:request_obj.requested_by.username }}</li>
+                            <li class="list-group-item"><strong>განყოფილება:</strong> {{ request_obj.requested_by.profile.department.name|default:"N/A" }}</li>
+                            <li class="list-group-item"><strong>შექმნის დრო:</strong> {{ request_obj.created_at|date:"Y-m-d H:i" }}</li>
+                            <li class="list-group-item"><strong>განახლდა:</strong> {{ request_obj.updated_at|date:"Y-m-d H:i" }}</li>
+                            {% if request_obj.completed_at %}
+                            <li class="list-group-item"><strong>დასრულების დრო:</strong> {{ request_obj.completed_at|date:"Y-m-d H:i" }}</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">მინიჭება & ტექნიკა</div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><strong>მინიჭებული:</strong> {{ request_obj.assigned_to.get_full_name|default:"მიუნიჭებელი" }}</li>
+                            {% if request_obj.related_equipment %}
+                            <li class="list-group-item">
+                                <strong>დაკავშირებული ტექნიკა:</strong>
+                                {{ request_obj.related_equipment.name }}
+                                <small class="text-muted">({{ request_obj.related_equipment.inventory_number|default:"ინვენტარის № არაა" }})</small>
+                            </li>
+                            {% else %}
+                            <li class="list-group-item"><strong>დაკავშირებული ტექნიკა:</strong> N/A</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer text-muted text-center">
+            ბოლოს განახლდა {{ request_obj.updated_at|timesince }} წინ
+        </div>
+    </div>
+</div>
+{% endblock content %}

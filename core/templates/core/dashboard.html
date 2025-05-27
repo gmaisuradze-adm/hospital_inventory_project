@@ -1,0 +1,144 @@
+{% extends "core/base.html" %}
+{% load static i18n %}
+
+{% block title %}{{ page_title|default:_("დეშბორდი") }} - {% trans "აიტი ინვენტარის სისტემა" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5"> {# Added mb-5 for bottom margin #}
+
+    {% comment %} Messages are handled by core/base.html via _messages.html {% endcomment %}
+
+    {% if dashboard_error %}
+        <div class="alert alert-danger" role="alert">
+            <strong>{% trans "დეშბორდის მონაცემების ჩატვირთვის შეცდომა:" %}</strong> {{ dashboard_error }}
+        </div>
+    {% endif %}
+
+    <!-- Welcome Header -->
+    <div class="mb-4 p-3 bg-primary text-white rounded shadow">
+        <h1 class="h4">{% trans "აიტი მართვის პანელი" %}</h1>
+        <p class="mb-0 lead">{% blocktrans with username=user.username %}კეთილი იყოს შენი დაბრუნება, {{ username }}!{% endblocktrans %}</p>
+    </div>
+
+    <!-- Quick Actions / Navigation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h2 class="h5 mb-0"><i class="fas fa-rocket me-2"></i>{% trans "სწრაფი ქმედებები" %}</h2>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% if user.is_staff %}
+                        <a href="{% url 'inventory:equipment_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-boxes fa-fw me-2 text-primary"></i>{% trans "ინვენტარის ნახვა" %}
+                        </a>
+                        <a href="{% url 'warehouse:stockitem_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-warehouse fa-fw me-2 text-primary"></i>{% trans "საწყობის მარაგი" %}
+                        </a>
+                        <a href="{% url 'requests_app:admin_request_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-tasks fa-fw me-2 text-primary"></i>{% trans "ყველა მოთხოვნის მართვა" %}
+                        </a>
+                    {% else %}
+                        <a href="{% url 'requests_app:user_request_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-clipboard-list fa-fw me-2 text-primary"></i>{% trans "ჩემი აიტი მოთხოვნები" %}
+                        </a>
+                        <a href="{% url 'requests_app:request_create' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-plus-circle fa-fw me-2 text-primary"></i>{% trans "ახალი მოთხოვნის დამატება" %}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if user.is_staff %}
+    <!-- Key Metrics for Staff -->
+    <div class="mb-4">
+        <h2 class="h5 mb-3 text-primary-emphasis">{% trans "სისტემის მიმოხილვა" %}</h2>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-info text-white">
+                        <i class="fas fa-desktop me-1"></i>{% trans "ინვენტარი" %}
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title text-muted">{% trans "სულ აღჭურვილობა" %}</h5>
+                        <p class="card-text display-6">{{ total_equipment|default:"N/A" }}</p>
+                        <a href="{% url 'inventory:equipment_list' %}" class="btn btn-sm btn-light mt-auto">{% trans "დეტალების ნახვა" %}</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="fas fa-dolly-flatbed me-1"></i>{% trans "საწყობი" %}
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title text-muted">{% trans "სულ მარაგი" %}</h5>
+                        <p class="card-text display-6">{{ total_stock_items|default:"N/A" }}</p>
+                        <a href="{% url 'warehouse:stockitem_list' %}" class="btn btn-sm btn-light mt-auto">{% trans "დეტალების ნახვა" %}</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-success text-white">
+                        <i class="fas fa-file-alt me-1"></i>{% trans "აიტი მოთხოვნები" %}
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title text-muted">{% trans "სულ აქტიური" %}</h5>
+                        <p class="card-text display-6">{{ overall_active_it_requests|default:"N/A" }}</p>
+                        <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-sm btn-light mt-auto">{% trans "დეტალების ნახვა" %}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity for Staff -->
+        {% if staff_recent_active_requests %}
+        <div class="card shadow mb-4">
+            <div class="card-header bg-light-subtle">
+                <h2 class="h5 mb-0 text-primary-emphasis"><i class="fas fa-history me-2"></i>{% trans "ბოლო აქტიური მოთხოვნები (პერსონალი)" %}</h2>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for req in staff_recent_active_requests %}
+                <a href="#" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1 text-primary">{{ req.subject|truncatechars:50 }}</h6>
+                        <small class="text-muted">{{ req.updated_at|date:"Y-m-d H:i" }}</small>
+                    </div>
+                    <p class="mb-1"><small>{% trans "სტატუსი" %}: <span class="badge rounded-pill bg-{{ req.get_status_badge_class }}">{{ req.get_status_display }}</span></small> - <small class="text-muted">ID: REQ-{{req.id}}</small></p>
+                </a>
+                {% empty %}
+                <div class="list-group-item">{% trans "ბოლო აქტიური მოთხოვნები არ მოიძებნა." %}</div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    {% endif %}
+
+    {% if not user.is_staff and my_recent_requests %}
+    <!-- Recent Requests for Non-Staff Users -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-light-subtle">
+            <h2 class="h5 mb-0 text-primary-emphasis"><i class="fas fa-history me-2"></i>{% trans "ჩემი ბოლო მოთხოვნები" %}</h2>
+        </div>
+        <div class="list-group list-group-flush">
+            {% for req in my_recent_requests %}
+            <a href="#" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1 text-primary">{{ req.subject|truncatechars:50 }}</h6>
+                    <small class="text-muted">{{ req.created_at|date:"Y-m-d H:i" }}</small>
+                </div>
+                <p class="mb-1"><small>{% trans "სტატუსი" %}: <span class="badge rounded-pill bg-{{ req.get_status_badge_class }}">{{ req.get_status_display }}</span></small> - <small class="text-muted">ID: REQ-{{req.id}}</small></p>
+            </a>
+            {% empty %}
+            <div class="list-group-item">{% trans "თქვენ არ გაქვთ ბოლო მოთხოვნები." %}</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

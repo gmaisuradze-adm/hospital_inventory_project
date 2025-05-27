@@ -1,0 +1,39 @@
+{% extends "core/base.html" %}
+{% load i18n %}
+
+{# Version: 1.1 - 2025-05-26 - Moved fallback_url definition. #}
+{# User: gmaisuradze-adm #}
+
+{% block title %}{{ page_title|default:"წაშლის დადასტურება" }} - საავადმყოფოს IT ინვენტარი{% endblock title %}
+
+{% block content %}
+{% url 'warehouse:stockitem_list' as fallback_url %}
+
+<div class="container mt-4 mb-5">
+    <div class="row">
+        <div class="col-md-8 col-lg-6 mx-auto">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>{{ page_title }}</h4>
+                </div>
+                <div class="card-body">
+                    <p class="fs-5">{% blocktrans with name=object.name item_id=object.item_id %}დარწმუნებული ხართ, რომ გსურთ მარაგის ელემენტის წაშლა <strong>"{{ name }}" (ID: {{ item_id }})</strong>?{% endblocktrans %}</p>
+                    <p class="text-muted">ეს ქმედება შეუქცევადია.</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{{ object.get_absolute_url|default:request.META.HTTP_REFERER|default:fallback_url }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> გაუქმება
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt me-1"></i> დიახ, წაშალე
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,185 @@
+{% extends "core/base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{{ page_title|default:"საწყობის მარაგი" }} - საავადმყოფოს IT ინვენტარი{% endblock title %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>{{ page_title|default:"საწყობის ნივთები" }}</h1>
+        {% if perms.warehouse.add_stockitem %}
+        <a href="{% url 'warehouse:stockitem_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-1"></i> ახალი ნივთის დამატება
+        </a>
+        {% endif %}
+    </div>
+
+    <form method="get" class="mb-4 p-3 border rounded bg-light">
+        <div class="row g-3 align-items-end"> {# Added align-items-end #}
+            <div class="col-md-3">
+                <label for="search_query" class="form-label">ძიება</label>
+                <input type="search" name="q" id="search_query" class="form-control" placeholder="ID, დასახელება..." value="{{ request.GET.q }}"> {# Changed type to search #}
+            </div>
+            <div class="col-md-3">
+                <label for="category_filter" class="form-label">კატეგორია</label>
+                <select name="category" id="category_filter" class="form-select">
+                    <option value="">ყველა კატეგორია</option>
+                    {% for category in categories_for_filter %}
+                        <option value="{{ category.pk }}" {% if request.GET.category == category.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="supplier_filter" class="form-label">მომწოდებელი</label>
+                <select name="supplier" id="supplier_filter" class="form-select">
+                    <option value="">ყველა მომწოდებელი</option>
+                    {% for supplier in suppliers_for_filter %}
+                        <option value="{{ supplier.pk }}" {% if request.GET.supplier == supplier.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ supplier.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="stock_status_filter" class="form-label">მარაგის სტატუსი</label>
+                <select name="stock_status" id="stock_status_filter" class="form-select">
+                    <option value="">ყველა</option>
+                    <option value="in_stock" {% if request.GET.stock_status == "in_stock" %}selected{% endif %}>მარაგშია</option>
+                    <option value="below_minimum" {% if request.GET.stock_status == "below_minimum" %}selected{% endif %}>მინიმუმზე ნაკლები</option>
+                </select>
+            </div>
+            <div class="col-md-2"> {# Removed mt-3 #}
+                <button type="submit" class="btn btn-success w-100">გაფილტვრა</button>
+            </div>
+            {% if request.GET.q or request.GET.category or request.GET.supplier or request.GET.stock_status %}
+            <div class="col-md-2"> {# Removed mt-3 #}
+                 <a href="{% url 'warehouse:stockitem_list' %}" class="btn btn-outline-secondary w-100">გასუფთავება</a>
+            </div>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-3" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if stock_items %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th class="border-bottom border-2">ნივთის ID</th>
+                        <th class="border-bottom border-2">დასახელება</th>
+                        <th class="border-bottom border-2">კატეგორია</th>
+                        <th class="border-bottom border-2">მომწოდებელი</th>
+                        <th class="border-bottom border-2">მარაგში</th>
+                        <th class="border-bottom border-2">მინ. მარაგი</th>
+                        <th class="border-bottom border-2">ერთეულის ფასი</th>
+                        <th class="border-bottom border-2">სტატუსი</th>
+                        <th class="border-bottom border-2">მოქმედებები</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in stock_items %}
+                    <tr class="align-middle {% if item.is_below_minimum_stock %}table-warning{% endif %}">
+                        <td class="border-bottom">{{ item.item_id }}</td>
+                        <td class="border-bottom">
+                            {% if perms.warehouse.view_stockitem %}
+                            <a href="{% url 'warehouse:stockitem_detail' pk=item.pk %}">{{ item.name|truncatewords:5 }}</a>
+                            {% else %}
+                            {{ item.name|truncatewords:5 }}
+                            {% endif %}
+                        </td>
+                        <td class="border-bottom">{{ item.category.name|default:"მიუწვდომელია" }}</td>
+                        <td class="border-bottom">{{ item.supplier.name|default:"მიუწვდომელია" }}</td>
+                        <td class="border-bottom">{{ item.quantity_on_hand }}</td>
+                        <td class="border-bottom">{{ item.minimum_stock_level }}</td>
+                        <td class="border-bottom">{{ item.unit_price|default:"მიუწვდომელია" }}</td>
+                        <td class="border-bottom">
+                            {% if item.is_below_minimum_stock %}
+                                <span class="badge bg-warning text-dark">ნაკლები მარაგი</span>
+                            {% else %}
+                                <span class="badge bg-success">მარაგშია</span>
+                            {% endif %}
+                        </td>
+                        <td class="border-bottom">
+                            {% if perms.warehouse.view_stockitem %}
+                            <a href="{% url 'warehouse:stockitem_detail' pk=item.pk %}" class="btn btn-sm btn-outline-primary mb-1 me-1" title="დეტალები"><i class="fas fa-eye"></i></a>
+                            {% endif %}
+                            {% if perms.warehouse.change_stockitem %}
+                            <a href="{% url 'warehouse:stockitem_edit' pk=item.pk %}" class="btn btn-sm btn-outline-secondary mb-1 me-1" title="რედაქტირება"><i class="fas fa-edit"></i></a>
+                            {% endif %}
+                            {% if perms.warehouse.delete_stockitem %}
+                            <a href="{% url 'warehouse:stockitem_delete' pk=item.pk %}" class="btn btn-sm btn-outline-danger mb-1" title="წაშლა"><i class="fas fa-trash-alt"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+             <nav aria-label="გვერდების გადართვა" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="წინა">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;</span>
+                        </li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active" aria-current="page"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a></li>
+                        {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                             <li class="page-item"><a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a></li>
+                        {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                            {% ifchanged %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endifchanged %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="შემდეგი">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info text-center mt-3" role="alert">
+             <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+            {% if request.GET.q or request.GET.category or request.GET.supplier or request.GET.stock_status %}
+                <p class="lead">საწყობში ნივთები მითითებული კრიტერიუმებით ვერ მოიძებნა. <a href="{% url 'warehouse:stockitem_list' %}">ფილტრების გასუფთავება</a>.</p>
+            {% else %}
+                <p class="lead">საწყობში მარაგის ნივთები არ არის.</p>
+            {% endif %}
+            {% if perms.warehouse.add_stockitem and not request.GET.q and not request.GET.category and not request.GET.supplier and not request.GET.stock_status %}
+                 <p>შეგიძლიათ <a href="{% url 'warehouse:stockitem_add' %}" class="alert-link">ახალი ნივთის დამატება</a>.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock content %}
