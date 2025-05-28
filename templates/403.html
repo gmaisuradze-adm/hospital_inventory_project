@@ -1,0 +1,55 @@
+{% extends "core/base.html" %}
+{% load i18n %}
+
+{% block page_title %}{% translate "Access Denied" %}{% endblock page_title %}
+
+{% block page_header_title %}{% translate "Access Denied" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="alert alert-danger DANGER" role="alert"> {# Added DANGER class for potentially stronger visual cue from Tabler if defined #}
+        <div class="d-flex">
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 9v4"></path><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"></path><path d="M12 16h.01"></path></svg>
+            </div>
+            <div>
+                <h4 class="alert-title">{% translate "Permission Denied" %} (Error 403)</h4>
+                <div class="text-muted">
+                    <p class="mb-1">
+                        {% translate "We're sorry, but you do not have the necessary permissions to access the page or perform the action you requested." %}
+                    </p>
+                    {% if exception %}
+                        <p class="mb-1"><em>{% translate "System reason:" %} {{ exception|escape }}</em></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">{% translate "What can you do?" %}</h5>
+            <ul>
+                <li>{% translate "Ensure you are logged in with the correct account that has sufficient privileges." %}</li>
+                <li>{% translate "If you believe you should have access to this resource, please contact the IT department or a system administrator." %}</li>
+                <li>{% translate "You can return to the homepage and try navigating from there." %}</li>
+            </ul>
+            <a href="{% if LOGIN_REDIRECT_URL %}{% if '/' in LOGIN_REDIRECT_URL %}{{ LOGIN_REDIRECT_URL }}{% else %}{% url LOGIN_REDIRECT_URL %}{% endif %}{% else %}/{% endif %}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 12l-2 0l9 -9l9 9l-2 0"></path><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"></path><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"></path></svg>
+                {% translate "Go to Homepage" %}
+            </a>
+        </div>
+    </div>
+
+    {% if request.user.is_superuser and debug %}
+        <div class="alert alert-warning mt-3">
+            <small>
+                <strong>{% translate "Technical details for administrators:" %}</strong><br>
+                {% translate "Exception:" %} {{ exception|escape|default:"No specific exception message provided to PermissionDenied." }} <br>
+                {% translate "User:" %} {{ request.user.username }} <br>
+                {% translate "Path:" %} {{ request.path }}
+            </small>
+        </div>
+    {% endif %}
+</div>
+{% endblock content %}

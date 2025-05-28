@@ -1,10 +1,12 @@
 {% extends "core/base.html" %}
-{% load static i18n %} {# Added i18n for trans tag, if you use it for button text #}
+{% load static i18n %}
 
 {% block title %}{% trans "Equipment Details" %}: {{ equipment.name }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
+    {# Breadcrumbs removed as per user request #}
+    {# 
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">{% trans "Dashboard" %}</a></li>
@@ -12,18 +14,75 @@
             <li class="breadcrumb-item active" aria-current="page">{{ equipment.name|truncatewords:5 }}</li>
         </ol>
     </nav>
+    #}
 
-    <h2>
-        <i class="fas {% if equipment.category.icon %}{{ equipment.category.icon }}{% else %}fa-cube{% endif %} me-2"></i>
-        {% trans "Equipment Details" %}: {{ equipment.name }}
-    </h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>
+            <i class="ti {% if equipment.category.icon %}{{ equipment.category.icon }}{% else %}ti-device-desktop-analytics{% endif %} me-2"></i> <!-- Tabler Icon -->
+            {% trans "Equipment Details" %}: {{ equipment.name }}
+        </h2>
+        {% if equipment.status %}
+        <span class="badge {{ equipment.get_status_badge_class }} fs-5">
+            {{ equipment.status.name|default:_("N/A") }}
+        </span>
+        {% endif %}
+    </div>
     <hr>
 
-    {% include "core/includes/messages.html" %} {# Ensure this path is correct for your messages include #}
+    {% include "core/includes/messages.html" %}
+
+    {% if equipment.status and equipment.status.is_decommissioned and equipment.decommission_details %}
+    <div class="alert alert-danger alert-important" role="alert">
+        <div class="d-flex">
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path><path d="M12 9v4"></path><path d="M12 16v.01"></path></svg>
+            </div>
+            <div>
+                <h4 class="alert-title">{% trans "This equipment is Decommissioned!" %}</h4>
+                <div class="text-secondary">
+                    <p class="mb-1"><strong>{% trans "Decommission Date:" %}</strong> {{ equipment.decommission_details.decommission_date|date:"Y-m-d" }}</p>
+                    <p class="mb-1"><strong>{% trans "Reason:" %}</strong> {{ equipment.decommission_details.reason|linebreaksbr }}</p>
+                    {% if equipment.decommission_details.decommissioned_by %}
+                        <p class="mb-1"><strong>{% trans "Decommissioned By:" %}</strong> {{ equipment.decommission_details.decommissioned_by.get_full_name|default:equipment.decommission_details.decommissioned_by.username }}</p>
+                    {% endif %}
+                    {% if equipment.decommission_details.method_of_disposal %}
+                        <p class="mb-1"><strong>{% trans "Method of Disposal:" %}</strong> {{ equipment.decommission_details.method_of_disposal }}</p>
+                    {% endif %}
+                    {% if equipment.decommission_details.disposal_certificate_id %}
+                        <p class="mb-1"><strong>{% trans "Disposal Certificate ID:" %}</strong> {{ equipment.decommission_details.disposal_certificate_id }}</p>
+                    {% endif %}
+                    {% if equipment.decommission_details.notes %}
+                        <p class="mb-0"><strong>{% trans "Final Notes:" %}</strong> {{ equipment.decommission_details.notes|linebreaksbr }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% elif equipment.status and equipment.status.is_marked_for_write_off %}
+    <div class="alert alert-warning alert-important" role="alert">
+        <div class="d-flex">
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path><path d="M12 9v4"></path><path d="M12 16v.01"></path></svg>
+            </div>
+            <div>
+                <h4 class="alert-title">{% trans "This equipment is Marked for Write-Off." %}</h4>
+                <div class="text-secondary">
+                    {% trans "It is pending final decommissioning." %}
+                    {# Ensure correct permission is checked, e.g., a specific 'decommission_equipment' or 'delete_equipment' #}
+                    {% if perms.inventory.delete_equipment %} 
+                        <a href="{% url 'inventory:equipment_decommission' equipment.pk %}" class="btn btn-danger btn-sm ms-2">
+                            <i class="ti ti-circle-x me-1"></i> {% trans "Confirm Decommission" %}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <div class="card shadow-sm mb-4">
         <div class="card-header">
-            {% trans "Details for Asset Tag" %}: <strong>{{ equipment.asset_tag|default:"N/A" }}</strong>
+            <h3 class="card-title">{% trans "Details for Asset Tag" %}: <strong>{{ equipment.asset_tag|default:"N/A" }}</strong></h3>
         </div>
         <div class="card-body">
             <div class="row">
@@ -32,20 +91,17 @@
                     <p><strong>{% trans "Name" %}:</strong> {{ equipment.name }}</p>
                     <p><strong>{% trans "Serial Number" %}:</strong> {{ equipment.serial_number|default:_("Not Available") }}</p>
                     <p><strong>{% trans "Category" %}:</strong> {{ equipment.category.name|default:_("Not Available") }}</p>
+                    {% if equipment.status %}
                     <p>
-                        <strong>{% trans "Status" %}:</strong>
-                        <span class="badge 
-                            {% if equipment.status.name == 'In Use' or equipment.status.name == 'გამოყენებაშია' %}bg-success
-                            {% elif equipment.status.name == 'Under Repair' or equipment.status.name == 'შეკეთების პროცესშია' %}bg-warning text-dark
-                            {% elif equipment.status.name == 'In Storage' or equipment.status.name == 'საწყობშია' %}bg-info text-dark
-                            {% elif equipment.status.name == 'Decommissioned' or equipment.status.name == 'ექსპლუატაციიდან გამოსული' or equipment.status.is_decommissioned %}bg-danger
-                            {% else %}bg-secondary{% endif %}">
+                        <strong>{% trans "Current Status" %}:</strong>
+                        <span class="badge {{ equipment.get_status_badge_class }}">
                             {{ equipment.status.name|default:_("Not Available") }}
                         </span>
                     </p>
+                    {% endif %}
                 </div>
                 <div class="col-md-6">
-                    <p><strong>{% trans "Current Location" %}:</strong> {{ equipment.current_location.name|default:_("Not Available") }}</p>
+                    <p><strong>{% trans "Current Location" %}:</strong> {{ equipment.current_location.get_full_path|default:_("Not Available") }}</p>
                     <p><strong>{% trans "Assigned To" %}:</strong>
                         {% if equipment.assigned_to %}
                             {{ equipment.assigned_to.get_full_name|default:equipment.assigned_to.username }}
@@ -55,7 +111,7 @@
                     </p>
                     <p><strong>{% trans "Supplier" %}:</strong> {{ equipment.supplier.name|default:_("Not Available") }}</p>
                     <p><strong>{% trans "Purchase Date" %}:</strong> {{ equipment.purchase_date|date:"Y-m-d"|default:_("Not Available") }}</p>
-                    <p><strong>{% trans "Purchase Cost" %}:</strong> {% if equipment.purchase_cost %}{{ equipment.purchase_cost|floatformat:2 }} ₾{% else %}{% trans "Not Available" %}{% endif %}</p> {# Changed $ to ₾ #}
+                    <p><strong>{% trans "Purchase Cost" %}:</strong> {% if equipment.purchase_cost is not None %}{{ equipment.purchase_cost|floatformat:2 }} ₾{% else %}{% trans "Not Available" %}{% endif %}</p>
                     <p><strong>{% trans "Warranty Expiry Date" %}:</strong> {{ equipment.warranty_expiry_date|date:"Y-m-d"|default:_("Not Available") }}</p>
                 </div>
             </div>
@@ -73,41 +129,93 @@
             </p>
         </div>
         <div class="card-footer text-end">
+            {# Edit Button: Show if user has permission and equipment is NOT decommissioned #}
             {% if perms.inventory.change_equipment %}
-            <a href="{% url 'inventory:equipment_update' equipment.pk %}" class="btn btn-warning">
-                <i class="fas fa-edit me-1"></i> {% trans "Edit" %}
-            </a>
+                {% if equipment.status and not equipment.status.is_decommissioned %}
+                    <a href="{% url 'inventory:equipment_update' equipment.pk %}" class="btn btn-warning">
+                        <i class="ti ti-edit me-1"></i> {% trans "Edit" %}
+                    </a>
+                {% endif %}
             {% endif %}
 
-            {% if perms.inventory.change_equipment and equipment.status and not equipment.status.is_decommissioned %}
-            <a href="{% url 'inventory:equipment_mark_write_off' pk=equipment.pk %}" class="btn btn-outline-danger ms-1">
-                <i class="fas fa-exclamation-triangle me-1"></i> {% trans "Mark for Write-Off" %}
-            </a>
+            {# Mark for Write-Off Button: Show if user has permission AND equipment is active (not marked, not decommissioned) #}
+            {% if perms.inventory.change_equipment %} {# Or a more specific permission like 'inventory.mark_for_write_off' #}
+                {% if equipment.status and not equipment.status.is_decommissioned and not equipment.status.is_marked_for_write_off %}
+                    <a href="{% url 'inventory:equipment_mark_for_write_off' equipment.pk %}" class="btn btn-outline-warning ms-1">
+                        <i class="ti ti-flag-off me-1"></i> {% trans "Mark for Write-Off" %}
+                    </a>
+                {% endif %}
             {% endif %}
 
+            {# Confirm Decommission Button: Show if user has permission AND equipment is marked but NOT yet decommissioned #}
+            {% if perms.inventory.delete_equipment %} {# Or a more specific permission like 'inventory.decommission_equipment' #}
+                {% if equipment.status and equipment.status.is_marked_for_write_off and not equipment.status.is_decommissioned %}
+                    <a href="{% url 'inventory:equipment_decommission' equipment.pk %}" class="btn btn-danger ms-1">
+                        <i class="ti ti-circle-x me-1"></i> {% trans "Confirm Decommission" %}
+                    </a>
+                {% endif %}
+            {% endif %}
+
+            {# Restore Equipment Button: Show if user has permission AND equipment IS decommissioned #}
+            {% if perms.inventory.add_equipment %} {# Or a more specific permission like 'inventory.restore_equipment' #}
+                {% if equipment.status and equipment.status.is_decommissioned %}
+                    <a href="{% url 'inventory:equipment_restore' equipment.pk %}" class="btn btn-info ms-1">
+                        <i class="ti ti-recycle me-1"></i> {% trans "Restore Equipment" %}
+                    </a>
+                {% endif %}
+            {% endif %}
+
+            {# Delete Button: Show if user has permission AND equipment is NOT decommissioned AND NOT marked for write-off #}
             {% if perms.inventory.delete_equipment %}
-            <a href="{% url 'inventory:equipment_delete' equipment.pk %}" class="btn btn-danger ms-1">
-                <i class="fas fa-trash-alt me-1"></i> {% trans "Delete" %}
-            </a>
+                 {% if equipment.status %}
+                    {% if not equipment.status.is_decommissioned and not equipment.status.is_marked_for_write_off %} 
+                        <a href="{% url 'inventory:equipment_delete' equipment.pk %}" class="btn btn-outline-danger ms-1">
+                            <i class="ti ti-trash me-1"></i> {% trans "Delete" %}
+                        </a>
+                    {% endif %}
+                {% elif not equipment.status %} {# If status is None, allow delete #}
+                     <a href="{% url 'inventory:equipment_delete' equipment.pk %}" class="btn btn-outline-danger ms-1">
+                        <i class="ti ti-trash me-1"></i> {% trans "Delete" %}
+                    </a>
+                {% endif %}
             {% endif %}
+
             <a href="{% url 'inventory:equipment_list' %}" class="btn btn-secondary ms-1">
-                <i class="fas fa-list me-1"></i> {% trans "Back to List" %}
+                <i class="ti ti-list me-1"></i> {% trans "Back to List" %}
             </a>
         </div>
     </div>
 
-    {% comment %} Placeholder for Maintenance History and Assignment History sections later {% endcomment %}
-    {% comment %}
-    <div class="mt-4">
-        <h4>{% trans "Maintenance History" %}</h4>
-        <!-- Logic to display maintenance history -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "History Log" %}</h3>
+        </div>
+        <div class="card-body">
+            {% if equipment.logs.all %}
+                <ul class="list-group list-group-flush">
+                {% for log_entry in equipment.logs.all|slice:":10" %} {# Show latest 10 logs, add pagination if needed #}
+                    <li class="list-group-item">
+                        <small class="text-muted">{{ log_entry.timestamp|date:"Y-m-d H:i" }} - {% if log_entry.user %}{{ log_entry.user.username }}{% else %}{% trans "System" %}{% endif %}</small><br>
+                        <strong>{{ log_entry.get_change_type_display_admin }}</strong>:
+                        {% if log_entry.field_changed %}
+                            <em>{{ log_entry.field_changed }}</em>:
+                            {% if log_entry.old_value %}<span class="badge bg-secondary-lt">{% trans "Old" %}: {{ log_entry.old_value|truncatechars:50 }}</span>{% endif %}
+                            <span class="badge bg-primary-lt">{% trans "New" %}: {{ log_entry.new_value|truncatechars:50 }}</span>
+                        {% endif %}
+                        {% if log_entry.notes %}
+                            <p class="mb-0 mt-1 fst-italic">{{ log_entry.notes|linebreaksbr }}</p>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+                </ul>
+                {% if equipment.logs.all.count > 10 %}
+                    <p class="mt-2"><a href="#">{% trans "View all logs..." %}</a></p> {# Link to a full log view page if needed #}
+                {% endif %}
+            {% else %}
+                <p>{% trans "No history logs available for this equipment." %}</p>
+            {% endif %}
+        </div>
     </div>
-
-    <div class="mt-4">
-        <h4>{% trans "Assignment History" %}</h4>
-        <!-- Logic to display assignment history -->
-    </div>
-    {% endcomment %}
 
 </div>
 {% endblock %}

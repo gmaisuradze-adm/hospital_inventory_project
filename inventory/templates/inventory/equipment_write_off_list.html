@@ -1,89 +1,54 @@
 {% extends "core/base.html" %}
-{% load static i18n %}
-{# {% load inventory_extras %} - ეს ხაზი ამოღებულია #}
+{% load i18n crispy_forms_tags %}
 
-{% block title %}{{ page_title }} - {{ block.super }}{% endblock title %}
+{% block title %}{{ page_title }} - {{ equipment.name }}{% endblock title %}
+
+{% block page_header_title %}
+    {# This block is usually for the main page header, which might be set in base.html or here #}
+    {# If you want this form's title in the main header, uncomment and adjust: #}
+    {# {{ page_title }} #}
+{% endblock page_header_title %}
 
 {% block content %}
 <div class="container mt-4 mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-        <h1 class="mb-2 me-3">{{ page_title }}</h1>
-        <div>
-            {% if perms.inventory.view_equipment %}
-            <a href="{% url 'inventory:equipment_list' %}" class="btn btn-outline-secondary mb-1">
-                <i class="fas fa-list me-1"></i> {% trans "View Active Inventory" %}
-            </a>
-            {% endif %}
-            {# Add other relevant action buttons if needed #}
-        </div>
-    </div>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">{% trans "Dashboard" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'inventory:equipment_list' %}">{% trans "Inventory" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'inventory:equipment_detail' equipment.pk %}">{{ equipment.name|truncatewords:5 }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ page_title|default:_("Mark for Write-Off") }}</li> {# Added default for safety #}
+        </ol>
+    </nav>
+
+    <h2 class="mb-0">{{ page_title|default:_("Mark Equipment for Write-Off") }}</h2>
+    <p class="text-muted lead fs-5">{% trans "Equipment" %}: {{ equipment.name }} ({{ equipment.asset_tag|default:"N/A" }})</p>
+    <hr>
 
     {% include "core/includes/messages.html" %}
 
-    {# ... დანარჩენი კოდი უცვლელია ... #}
-    {% if write_off_equipment_list %}
-        <div class="card shadow-sm">
-            <div class="card-header bg-light py-3">
-                <h5 class="mb-0">{% trans "Equipment Pending Final Write-Off" %}</h5>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover table-sm mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th scope="col" class="ps-3">{% trans "Asset Tag" %}</th>
-                            <th scope="col">{% trans "Name" %}</th>
-                            <th scope="col">{% trans "Category" %}</th>
-                            <th scope="col">{% trans "Last Location" %}</th>
-                            <th scope="col">{% trans "Marked On" %}</th>
-                            <th scope="col">{% trans "Marked By" %}</th>
-                            <th scope="col" class="text-center">{% trans "Actions" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in write_off_equipment_list %}
-                        <tr class="align-middle table-warning"> {# Highlight row to indicate special status #}
-                            <td class="ps-3">
-                                <a href="{% url 'inventory:equipment_detail' item.pk %}"><strong>{{ item.asset_tag|default:"N/A" }}</strong></a>
-                            </td>
-                            <td>{{ item.name }}</td>
-                            <td>{{ item.category.name|default:"N/A" }}</td>
-                            <td>{{ item.current_location.name|default:"N/A" }}</td>
-                            <td>{{ item.last_updated|date:"Y-m-d H:i" }}</td>
-                            <td>{{ item.updated_by.username|default:"System" }}</td>
-                            <td class="text-center">
-                                <a href="{% url 'inventory:equipment_detail' item.pk %}" class="btn btn-sm btn-outline-primary me-1" title="{% trans 'View Details & Notes' %}">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                {# Future actions could go here:
-                                <a href="#" class="btn btn-sm btn-success me-1" title="{% trans 'Confirm Write-Off (Generate Act)' %}">
-                                    <i class="fas fa-file-signature"></i>
-                                </a>
-                                <a href="#" class="btn btn-sm btn-secondary" title="{% trans 'Revert to Active (if applicable)' %}">
-                                    <i class="fas fa-undo"></i>
-                                </a>
-                                #}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-0">{{ form_title|default:_("Reason for Marking for Write-Off") }}</h5>
         </div>
+        <div class="card-body">
+            <p>{% blocktrans with equipment_name=equipment.name %}Please provide a reason for marking the equipment "<strong>{{ equipment_name }}</strong>" for write-off.{% endblocktrans %}</p>
+            <p class="text-muted small">{% trans "This action will change its status to 'Marked for Write-Off' (or your equivalent status name) and add your reason to the equipment's notes. The equipment will then be ready for final decommissioning." %}</p>
+            
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                {{ form|crispy }}
 
-        {% if is_paginated %}
-            <div class="mt-4">
-                {% include "core/includes/pagination.html" with page_obj=page_obj %}
-            </div>
-        {% endif %}
-
-    {% else %}
-        <div class="alert alert-info text-center mt-3 shadow-sm" role="alert">
-            <div class="d-flex flex-column align-items-center">
-                <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
-                <p class="lead mb-1">{% trans "There are currently no equipment items marked for write-off." %}</p>
-                <p class="text-muted">{% trans "Items marked for write-off will appear here." %}</p>
-            </div>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i> {{ submit_button_text|default:_("Mark for Write-Off") }}
+                    </button>
+                    <a href="{% url 'inventory:equipment_detail' equipment.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i> {% trans "Cancel" %}
+                    </a>
+                </div>
+            </form>
         </div>
-    {% endif %}
+    </div>
 </div>
 {% endblock content %}

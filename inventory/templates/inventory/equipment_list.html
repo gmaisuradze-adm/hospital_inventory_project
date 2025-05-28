@@ -13,7 +13,7 @@
 {% block page_action_buttons %}
     {% if perms.inventory.add_equipment %}
         <a href="{% url 'inventory:equipment_create' %}" class="btn btn-primary">
-            <i class="ti ti-plus me-1"></i> <!-- Tabler Icon -->
+            <i class="ti ti-plus me-1"></i>
             {% trans "Add New Equipment" %}
         </a>
     {% endif %}
@@ -22,9 +22,9 @@
 {% block content %}
     <div class="card card-body mb-4">
         <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-3">
+            <div class="col-md-4"> {# Adjusted column size #}
                 <label for="search_query" class="form-label">{% trans "Search" %}</label>
-                <input type="search" name="q" id="search_query" class="form-control" placeholder="{% trans "Asset tag, name..." %}" value="{{ request.GET.q }}">
+                <input type="search" name="q" id="search_query" class="form-control" placeholder="{% trans "Asset tag, name, serial..." %}" value="{{ request.GET.q|default:'' }}">
             </div>
             <div class="col-md-3">
                 <label for="category_filter" class="form-label">{% trans "Category" %}</label>
@@ -38,25 +38,32 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label for="status_filter" class="form-label">{% trans "Status" %}</label>
-                <select name="status" id="status_filter" class="form-select">
-                    <option value="">{% trans "All Statuses" %}</option>
+                <label for="status_filter_select" class="form-label">{% trans "Status" %}</label>
+                <select name="status_filter" id="status_filter_select" class="form-select">
+                    <option value="active" {% if current_status_filter == "active" %}selected{% endif %}>{% trans "Active (In Use/Storage)" %}</option>
+                    <option value="marked" {% if current_status_filter == "marked" %}selected{% endif %}>{% trans "Marked for Write-Off" %}</option>
+                    <option value="decommissioned" {% if current_status_filter == "decommissioned" %}selected{% endif %}>{% trans "Decommissioned" %}</option>
+                    <option value="" {% if not current_status_filter or current_status_filter == "" and current_status_filter != "active" and current_status_filter != "marked" and current_status_filter != "decommissioned" %}selected{% endif %}>--- {% trans "All Statuses" %} ---</option>
+                    {# Option to filter by specific status ID if still needed, can be added from statuses_for_filter #}
                     {% for status_obj in statuses_for_filter %}
-                        <option value="{{ status_obj.pk }}" {% if request.GET.status == status_obj.pk|stringformat:"s" %}selected{% endif %}>
-                            {{ status_obj.name }}
-                        </option>
+                         {# Avoid duplicating the grouped options if they match a specific status by name/flag #}
+                        {% if not status_obj.is_decommissioned and not status_obj.is_marked_for_write_off and current_status_filter != "active" %}
+                            {# Or more complex logic to show individual statuses not covered by groups #}
+                        {% endif %}
+                        {# Simplified: if you want individual statuses too, uncomment below and adjust logic in views.py #}
+                        {# <option value="{{ status_obj.pk }}" {% if request.GET.status_filter == status_obj.pk|stringformat:"s" %}selected{% endif %}>{{ status_obj.name }}</option> #}
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-auto">
+            <div class="col-md-auto mt-md-0 mt-3"> {# Ensure button alignment #}
                 <button type="submit" class="btn btn-success w-100">
                     <i class="ti ti-filter me-1"></i> {% trans "Filter" %}
                 </button>
             </div>
-            {% if request.GET.q or request.GET.category or request.GET.status %}
-            <div class="col-md-auto">
+            {% if request.GET.q or request.GET.category or request.GET.status_filter %}
+            <div class="col-md-auto mt-md-0 mt-2"> {# Ensure button alignment #}
                  <a href="{% url 'inventory:equipment_list' %}" class="btn btn-outline-secondary w-100">
-                    <i class="ti ti-clear-all me-1"></i> {% trans "Clear" %}
+                    <i class="ti ti-refresh me-1"></i> {% trans "Clear Filters" %}
                  </a>
             </div>
             {% endif %}
@@ -80,39 +87,64 @@
                     </thead>
                     <tbody>
                         {% for item in equipment_list %}
-                        <tr>
+                        <tr 
+                            class="
+                                {% if item.status and item.status.is_decommissioned %}
+                                    text-muted {{ item.get_status_badge_class }}
+                                {% elif item.status and item.status.is_marked_for_write_off %}
+                                    table-warning-text-emphasis {{ item.get_status_badge_class }}
+                                {% else %}
+                                    {{ item.get_status_badge_class }}
+                                {% endif %}
+                            "
+                        >
                             <td>
-                                <a href="{% url 'inventory:equipment_detail' item.pk %}">{{ item.asset_tag|default:"N/A" }}</a>
+                                <a href="{% url 'inventory:equipment_detail' item.pk %}"><strong>{{ item.asset_tag|default:"N/A" }}</strong></a>
                             </td>
                             <td data-label="{% trans "Name" %}">{{ item.name }}</td>
                             <td data-label="{% trans "Category" %}">{{ item.category.name|default:"N/A" }}</td>
                             <td data-label="{% trans "Status" %}">
-                                <span class="badge 
-                                    {% if item.status.name == 'In Use' %}bg-success-lt
-                                    {% elif item.status.name == 'Under Repair' %}bg-warning-lt
-                                    {% elif item.status.name == 'In Storage' %}bg-info-lt
-                                    {% elif item.status.name == 'Decommissioned' %}bg-danger-lt
-                                    {% elif item.status.name == 'To Be Written Off' %}bg-orange-lt
-                                    {% else %}bg-secondary-lt{% endif %}">
+                                {% if item.status %}
+                                <span class="badge {{ item.get_status_badge_class }}">
                                     {{ item.status.name|default:"N/A" }}
                                 </span>
+                                {% else %}
+                                <span class="badge bg-secondary-lt">{% trans "N/A" %}</span>
+                                {% endif %}
                             </td>
-                            <td data-label="{% trans "Location" %}">{{ item.current_location.name|default:"N/A" }}</td>
-                            <td data-label="{% trans "Assigned To" %}">{{ item.assigned_to.username|default:"-" }}</td>
+                            <td data-label="{% trans "Location" %}">{{ item.current_location.get_full_path|default:"N/A" }}</td>
+                            <td data-label="{% trans "Assigned To" %}">
+                                {% if item.assigned_to %}
+                                    {{ item.assigned_to.get_full_name|default:item.assigned_to.username }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
                             <td>
                                 <div class="btn-list flex-nowrap">
-                                    <a href="{% url 'inventory:equipment_detail' item.pk %}" class="btn btn-sm btn-outline-primary" title="{% trans "View" %}">
+                                    <a href="{% url 'inventory:equipment_detail' item.pk %}" class="btn btn-sm btn-outline-primary" title="{% trans "View Details" %}">
                                         <i class="ti ti-eye"></i>
                                     </a>
-                                    {% if perms.inventory.change_equipment %}
-                                        <a href="{% url 'inventory:equipment_update' item.pk %}" class="btn btn-sm btn-outline-secondary" title="{% trans "Edit" %}">
-                                            <i class="ti ti-edit"></i>
-                                        </a>
+                                    {% if item.status and not item.status.is_decommissioned %}
+                                        {% if perms.inventory.change_equipment %}
+                                            <a href="{% url 'inventory:equipment_update' item.pk %}" class="btn btn-sm btn-outline-secondary" title="{% trans "Edit" %}">
+                                                <i class="ti ti-edit"></i>
+                                            </a>
+                                        {% endif %}
                                     {% endif %}
+                                    {# Delete button logic: Do not allow deleting if decommissioned or marked for write-off #}
                                     {% if perms.inventory.delete_equipment %}
-                                        <a href="{% url 'inventory:equipment_delete' item.pk %}" class="btn btn-sm btn-outline-danger" title="{% trans "Delete" %}">
-                                            <i class="ti ti-trash"></i>
-                                        </a>
+                                        {% if item.status %}
+                                            {% if not item.status.is_decommissioned and not item.status.is_marked_for_write_off %}
+                                            <a href="{% url 'inventory:equipment_delete' item.pk %}" class="btn btn-sm btn-outline-danger" title="{% trans "Delete" %}">
+                                                <i class="ti ti-trash"></i>
+                                            </a>
+                                            {% endif %}
+                                        {% else %} {# If status is None, allow delete #}
+                                            <a href="{% url 'inventory:equipment_delete' item.pk %}" class="btn btn-sm btn-outline-danger" title="{% trans "Delete" %}">
+                                                <i class="ti ti-trash"></i>
+                                            </a>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                             </td>
@@ -145,7 +177,14 @@
                             <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true"><i class="ti ti-chevron-left"></i> {% trans "Prev" %}</a></li>
                         {% endif %}
                         
-                        <li class="page-item active" aria-current="page"><a class="page-link" href="#">{{ page_obj.number }}</a></li>
+                        {# Pagination numbers (optional, can be more complex) #}
+                        {% for i in page_obj.paginator.page_range %}
+                            {% if page_obj.number == i %}
+                                <li class="page-item active" aria-current="page"><a class="page-link" href="#">{{ i }}</a></li>
+                            {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                                <li class="page-item"><a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a></li>
+                            {% endif %}
+                        {% endfor %}
                         
                         {% if page_obj.has_next %}
                             <li class="page-item">
@@ -172,20 +211,19 @@
                 <i class="ti ti-mood-empty icon"></i>
             </div>
             <p class="empty-title">
-                {% if request.GET.q or request.GET.category or request.GET.status %}
+                {% if request.GET.q or request.GET.category or request.GET.status_filter %}
                     {% trans "No equipment found matching your criteria." %}
                 {% else %}
                     {% trans "No equipment items found." %}
                 {% endif %}
             </p>
-            {% if request.GET.q or request.GET.category or request.GET.status %}
+            {% if request.GET.q or request.GET.category or request.GET.status_filter %}
                 <p class="empty-subtitle text-muted">
                     {% trans "Try adjusting your search or filter terms, or" %} <a href="{% url 'inventory:equipment_list' %}">{% trans "clear filters" %}</a>.
                 </p>
             {% endif %}
-            {# --- MODIFIED IF CONDITION HERE --- #}
             {% if perms.inventory.add_equipment %}
-                {% if not request.GET.q and not request.GET.category and not request.GET.status %}
+                {% if not request.GET.q and not request.GET.category and not request.GET.status_filter %}
                 <div class="empty-action">
                     <a href="{% url 'inventory:equipment_create' %}" class="btn btn-primary">
                         <i class="ti ti-plus me-1"></i>
@@ -194,7 +232,6 @@
                 </div>
                 {% endif %}
             {% endif %}
-            {# --- END OF MODIFIED IF CONDITION --- #}
         </div>
     {% endif %}
 {% endblock content %}

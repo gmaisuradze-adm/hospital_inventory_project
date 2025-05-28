@@ -1,13 +1,16 @@
-# Version: 1.X - 2025-05-27 - Copilot Edit
-# NEW: Updated RequestDetailView to handle UserRequestCommentForm POST requests.
-# Copilot Edit 2025-05-28: Minor refinements, consistency checks, FieldError fix.
-# Copilot Edit 2025-05-28 (Fix 2): Corrected AttributeError for STATUS_COMPLETED.
-# Copilot Edit 2025-05-28 (Fix 3): Removed 'user' kwarg from model save() calls.
+# Version: 1.X - 2025-05-28 - Copilot Edit
+# - Changed UserPassesTestMixin test_func to use specific model permissions
+#   instead of just is_staff for more granular control in relevant views.
+# - Added PermissionRequiredMixin to RequestCreateView.
+# Version: 2.0 - 2025-05-28 - Proposed Changes by AI
+# - Added UserPassesTestMixin to all views to restrict access to staff users only.
+# - Ensured UserPassesTestMixin uses raise_exception = True for direct 403.
+# - Combined is_staff check with specific permissions where appropriate.
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.utils.text import Truncator
@@ -16,20 +19,41 @@ from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.http import HttpResponseNotAllowed
+from django.core.exceptions import PermissionDenied # Import PermissionDenied
 
 from .models import Request, RequestType, RequestUpdate
 from .forms import RequestCreateForm, RequestStaffUpdateForm, UserRequestCommentForm
 
 User = get_user_model()
 
-class AdminRequestListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+# Helper function for user_passes_test decorator
+def staff_required(login_url=None, raise_exception=True):
+    def check_staff(user):
+        if user.is_staff:
+            return True
+        if raise_exception:
+            raise PermissionDenied
+        return False
+    return user_passes_test(check_staff, login_url=login_url)
+
+class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """
+    Mixin to ensure the user is logged in and is a staff member.
+    Shows 403 page if not staff.
+    """
+    raise_exception = True # For UserPassesTestMixin to show 403
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+class AdminRequestListView(StaffRequiredMixin, ListView): # Now inherits StaffRequiredMixin
     model = Request
     template_name = 'requests_app/request_admin_list.html'
     context_object_name = 'requests'
     paginate_by = 15
 
-    def test_func(self):
-        return self.request.user.is_staff
+    def test_func(self): # Overrides StaffRequiredMixin's test_func for more specific check
+        return super().test_func() and self.request.user.has_perm('requests_app.view_request')
 
     def get_queryset(self):
         queryset = Request.objects.select_related(
@@ -82,25 +106,33 @@ class AdminRequestListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         context['current_status'] = self.request.GET.get('status', '')
         context['current_type'] = self.request.GET.get('type', '')
         context['current_assigned_to'] = self.request.GET.get('assigned_to', '')
+        # User must be staff to see this page, so can_add_request only needs to check the permission
+        context['can_add_request'] = self.request.user.has_perm('requests_app.add_request')
         return context
 
-class RequestCreateView(LoginRequiredMixin, CreateView):
+class RequestCreateView(StaffRequiredMixin, PermissionRequiredMixin, CreateView): # Now inherits StaffRequiredMixin
     model = Request
     form_class = RequestCreateForm
     template_name = 'requests_app/request_form.html'
+    permission_required = 'requests_app.add_request'
+    # raise_exception is handled by StaffRequiredMixin and PermissionRequiredMixin
+
+    def test_func(self): # Overrides StaffRequiredMixin's test_func
+        # User must be staff (from StaffRequiredMixin) AND have the 'add_request' permission
+        return super().test_func() # This already checks is_staff
 
     def get_success_url(self):
         return reverse_lazy('requests_app:request_detail', kwargs={'pk': self.object.pk})
 
     def form_valid(self, form):
-        form.instance.requested_by = self.request.user
-        response = super().form_valid(form) # This will call Request.save() via the form
-        messages.success(self.request, _('Your IT request (#%(request_id)s) has been submitted successfully!') % {'request_id': self.object.id})
+        form.instance.requested_by = self.request.user # Staff member is creating it
+        response = super().form_valid(form)
+        messages.success(self.request, _('IT request (#%(request_id)s) has been submitted successfully!') % {'request_id': self.object.id})
         return response
     
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user # Passed to form for potential use, not directly to model.save()
+        kwargs['user'] = self.request.user
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -108,30 +140,29 @@ class RequestCreateView(LoginRequiredMixin, CreateView):
         context['page_title'] = _("Submit New IT Request")
         context['form_title'] = _("New IT Request Form")
         context['submit_button_text'] = _("Submit Request")
-        # For cancel button in request_form.html
-        context['cancel_url'] = reverse_lazy('requests_app:user_request_list') 
+        # If a non-staff user somehow got here, cancel_url should be a safe place
+        # However, StaffRequiredMixin should prevent non-staff access.
+        # Defaulting to admin list as only staff can create.
+        context['cancel_url'] = reverse_lazy('requests_app:admin_request_list')
         return context
 
-class RequestUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class RequestUpdateView(StaffRequiredMixin, PermissionRequiredMixin, UpdateView): # Now inherits StaffRequiredMixin
     model = Request
     form_class = RequestStaffUpdateForm
     template_name = 'requests_app/request_form.html'
     context_object_name = 'request_obj' 
+    permission_required = 'requests_app.change_request'
 
-    def test_func(self):
-        return self.request.user.is_staff
+    def test_func(self): # Overrides StaffRequiredMixin's test_func
+        return super().test_func() # This already checks is_staff
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        # Pass acting user to the form for logging in RequestStaffUpdateForm.save()
         kwargs['user'] = self.request.user 
         return kwargs
 
     def form_valid(self, form):
-        # The form's save method (RequestStaffUpdateForm.save) is responsible for:
-        # 1. Saving the Request instance.
-        # 2. Creating the RequestUpdate log entry, using the 'user' passed to its __init__.
-        response = super().form_valid(form) # This calls form.save()
+        response = super().form_valid(form)
         messages.success(self.request, _('Request #%(request_id)s has been updated successfully!') % {'request_id': self.object.id})
         return response
 
@@ -145,18 +176,26 @@ class RequestUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         context['page_title'] = _("Edit IT Request #%(request_id)s") % {'request_id': request_instance.id}
         context['form_title'] = _("Update IT Request: %(subject)s") % {'subject': truncated_subject}
         context['submit_button_text'] = _("Save Changes")
-        # For cancel button in request_form.html
         context['cancel_url'] = self.object.get_absolute_url() 
         return context
 
-class RequestDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+class RequestDetailView(StaffRequiredMixin, DetailView): # Now inherits StaffRequiredMixin
     model = Request
     template_name = 'requests_app/request_detail.html'
     context_object_name = 'request_obj'
 
-    def test_func(self):
-        request_instance = self.get_object()
-        return self.request.user.is_staff or self.request.user == request_instance.requested_by
+    def test_func(self): # Overrides StaffRequiredMixin's test_func
+        # User must be staff (from StaffRequiredMixin) AND have 'view_request' permission
+        # OR be the requester (though this part is now redundant if only staff can access)
+        # For consistency, we'll ensure staff has view_request perm.
+        # If the original intent was for requesters (even non-staff) to see their own, this logic changes.
+        # Based on the new requirement (only staff access), this simplifies.
+        if not super().test_func(): # Checks is_staff
+            return False
+        
+        # Staff users need 'view_request' to see details.
+        # The original 'is_requester' check becomes less relevant if non-staff cannot access any request page.
+        return self.request.user.has_perm('requests_app.view_request')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -176,23 +215,42 @@ class RequestDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
             Request.STATUS_RESOLVED_AWAITING_CONFIRMATION
         ]
         
-        if self.request.user == request_instance.requested_by and \
-           request_instance.status in commentable_statuses:
+        # Only staff can comment now, and they need 'change_request' permission
+        can_comment = self.request.user.has_perm('requests_app.change_request') and \
+                      request_instance.status in commentable_statuses
+
+        if can_comment:
             if 'user_comment_form' not in context:
                  context['user_comment_form'] = UserRequestCommentForm()
         
-        # Use the correct related_name from RequestUpdate model
         context['request_updates'] = request_instance.updates_history.all().order_by('-update_time')
+        context['can_update_request'] = self.request.user.has_perm('requests_app.change_request')
+        # 'is_requester' is less relevant if only staff access, but kept for now if template uses it.
+        context['is_requester'] = self.request.user == request_instance.requested_by
+        # Closing/Reopening logic might also need adjustment if only staff manage this.
+        # Assuming for now that staff with 'change_request' can perform these actions.
+        context['can_close_request'] = request_instance.status == Request.STATUS_RESOLVED_AWAITING_CONFIRMATION and \
+                                     self.request.user.has_perm('requests_app.change_request')
+        
+        allowed_to_reopen = [
+            Request.STATUS_CLOSED_CONFIRMED, 
+            Request.STATUS_CLOSED_AUTO,
+            Request.STATUS_RESOLVED_AWAITING_CONFIRMATION
+        ]
+        context['can_reopen_request'] = request_instance.status in allowed_to_reopen and \
+                                      self.request.user.has_perm('requests_app.change_request')
+        
         return context
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         
-        if 'submit_user_comment' in request.POST:
-            if not (self.request.user.is_staff or self.request.user == self.object.requested_by):
-                messages.error(request, _("You are not authorized to add comments to this request."))
-                return redirect(self.object.get_absolute_url())
+        # Only staff with 'change_request' permission can add comments
+        if not (self.request.user.is_staff and self.request.user.has_perm('requests_app.change_request')):
+            messages.error(request, _("You are not authorized to add comments to this request."))
+            return redirect(self.object.get_absolute_url())
 
+        if 'submit_user_comment' in request.POST:
             form = UserRequestCommentForm(request.POST)
             if form.is_valid():
                 comment_text = form.cleaned_data['comment_text']
@@ -203,11 +261,11 @@ class RequestDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
                     notes=comment_text
                 )
                 
-                if self.object.status == Request.STATUS_PENDING_USER_INPUT:
+                # This logic might change: if user is always staff, PENDING_USER_INPUT might be handled differently
+                # For now, keeping it, assuming staff might put it to PENDING_USER_INPUT for another staff.
+                if self.request.user == self.object.requested_by and self.object.status == Request.STATUS_PENDING_USER_INPUT:
                     old_status_for_log = self.object.status
                     self.object.status = Request.STATUS_REOPENED 
-                    
-                    # REMOVED 'user' kwarg
                     self.object.save(update_fields=['status']) 
                     
                     RequestUpdate.objects.create(
@@ -228,13 +286,24 @@ class RequestDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         
         return HttpResponseNotAllowed(['GET'])
 
-class UserRequestListView(LoginRequiredMixin, ListView):
+
+class UserRequestListView(StaffRequiredMixin, ListView): # Now inherits StaffRequiredMixin
     model = Request
-    template_name = 'requests_app/user_request_list.html'
+    # This template might need to be renamed or its content adjusted
+    # as it's no longer for "user's own requests" but for "staff viewing requests they made"
+    # Or, this view could be removed if AdminRequestListView covers all staff needs.
+    # For now, let's assume it's for staff to see requests they personally created.
+    template_name = 'requests_app/user_request_list.html' 
     context_object_name = 'user_requests'
     paginate_by = 10
 
+    def test_func(self): # Overrides StaffRequiredMixin's test_func
+        # User must be staff (from StaffRequiredMixin)
+        # No additional permission check here, as it's for their *own* requests.
+        return super().test_func()
+
     def get_queryset(self):
+        # Filters for requests made by the current staff user
         return Request.objects.filter(requested_by=self.request.user).select_related(
             'request_type',
             'assigned_to',
@@ -244,43 +313,48 @@ class UserRequestListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['page_title'] = _('My IT Requests')
+        context['page_title'] = _('My Submitted IT Requests (Staff)') # Title changed
+        # Button to add new requests is still relevant if staff can add requests
+        context['can_add_request'] = self.request.user.has_perm('requests_app.add_request')
         return context
 
-@login_required
-def request_close_by_user(request, pk):
+# Decorator to ensure only staff can access these function-based views
+@staff_required(raise_exception=True)
+@login_required # login_required is somewhat redundant due to staff_required but good for clarity
+def request_close_by_user(request, pk): # Renaming might be considered, e.g., request_close_by_staff
     request_obj = get_object_or_404(Request, pk=pk)
 
-    if request.user != request_obj.requested_by:
-        messages.error(request, _("You are not authorized to perform this action."))
+    # Now, only staff can access. Further checks if only specific staff can close (e.g., assignee or admin)
+    # For simplicity, assume any staff with 'change_request' can close if status is correct.
+    if not request.user.has_perm('requests_app.change_request'):
+        messages.error(request, _("You do not have permission to close requests."))
         return redirect('requests_app:request_detail', pk=pk)
     
     if request_obj.status == Request.STATUS_RESOLVED_AWAITING_CONFIRMATION:
         old_status_for_log = request_obj.status
         request_obj.status = Request.STATUS_CLOSED_CONFIRMED
-        
-        # REMOVED 'user' kwarg
         request_obj.save(update_fields=['status'])
 
         RequestUpdate.objects.create(
             request=request_obj,
             updated_by=request.user,
-            notes=_("Request closed by user confirmation."),
+            notes=_("Request closed by staff confirmation."), # Changed message
             old_status=old_status_for_log,
             new_status=request_obj.status
         )
         messages.success(request, _("Request #%(request_id)s has been closed.") % {'request_id': pk})
     else:
-        messages.warning(request, _("This request cannot be closed by you from its current status (%(status)s). It must be resolved by IT and awaiting your confirmation.") % {'status': request_obj.get_status_display()})
+        messages.warning(request, _("This request cannot be closed from its current status (%(status)s). It must be resolved and awaiting confirmation.") % {'status': request_obj.get_status_display()})
     
     return redirect('requests_app:request_detail', pk=pk)
 
+@staff_required(raise_exception=True)
 @login_required
-def request_reopen_by_user(request, pk):
+def request_reopen_by_user(request, pk): # Renaming might be considered
     request_obj = get_object_or_404(Request, pk=pk)
 
-    if request.user != request_obj.requested_by:
-        messages.error(request, _("You are not authorized to perform this action."))
+    if not request.user.has_perm('requests_app.change_request'):
+        messages.error(request, _("You do not have permission to reopen requests."))
         return redirect('requests_app:request_detail', pk=pk)
 
     allowed_statuses_to_reopen = [
@@ -291,14 +365,12 @@ def request_reopen_by_user(request, pk):
     if request_obj.status in allowed_statuses_to_reopen:
         original_status_for_log = request_obj.status
         request_obj.status = Request.STATUS_REOPENED
-        
-        # REMOVED 'user' kwarg
         request_obj.save(update_fields=['status'])
 
         RequestUpdate.objects.create(
             request=request_obj,
             updated_by=request.user,
-            notes=_("Request reopened by user."),
+            notes=_("Request reopened by staff."), # Changed message
             old_status=original_status_for_log,
             new_status=request_obj.status
         )

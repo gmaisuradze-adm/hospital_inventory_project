@@ -1,5 +1,6 @@
-# Version: 1.2 - 2025-05-26 22:20:59 UTC - gmaisuradze-adm
-# - Added URLs for equipment write-off functionality.
+# Version: 1.3.1 - 2025-05-28 - Copilot Edit
+# - Added URLs for MarkedForWriteOffListView and DecommissionedEquipmentListView.
+# - Kept existing URLs for decommission and restore processes.
 from django.urls import path
 from . import views
 
@@ -7,16 +8,21 @@ app_name = 'inventory'
 
 urlpatterns = [
     # Equipment URLs
-    path('', views.EquipmentListView.as_view(), name='equipment_list'), # Assuming this is the main equipment list
+    path('', views.EquipmentListView.as_view(), name='equipment_list'),
     path('equipment/<int:pk>/', views.EquipmentDetailView.as_view(), name='equipment_detail'),
     path('equipment/new/', views.EquipmentCreateView.as_view(), name='equipment_create'),
     path('equipment/<int:pk>/update/', views.EquipmentUpdateView.as_view(), name='equipment_update'),
     path('equipment/<int:pk>/delete/', views.EquipmentDeleteView.as_view(), name='equipment_delete'),
     
-    # --- START: New URLs for Write-Off Functionality ---
-    path('equipment/<int:pk>/mark-for-write-off/', views.EquipmentMarkWriteOffView.as_view(), name='equipment_mark_write_off'),
-    path('equipment/write-off-list/', views.EquipmentWriteOffListView.as_view(), name='equipment_write_off_list'),
-    # --- END: New URLs for Write-Off Functionality ---
+    # --- URLs for Write-Off, Decommission, and Restore Functionality ---
+    path('equipment/<int:pk>/mark-for-write-off/', views.EquipmentMarkForWriteOffView.as_view(), name='equipment_mark_for_write_off'),
+    path('equipment/<int:pk>/decommission/', views.EquipmentDecommissionView.as_view(), name='equipment_decommission'),
+    path('equipment/<int:pk>/restore/', views.EquipmentRestoreView.as_view(), name='equipment_restore'),
+    
+    # --- NEW URLs for Special Equipment Lists ---
+    path('equipment/marked-for-write-off/', views.MarkedForWriteOffListView.as_view(), name='marked_for_write_off_list'),
+    path('equipment/decommissioned/', views.DecommissionedEquipmentListView.as_view(), name='decommissioned_list'),
+    # --- END: URLs for Special Equipment Lists ---
     
     # URLs for Categories
     path('categories/', views.CategoryListView.as_view(), name='category_list'),

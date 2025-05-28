@@ -1,5 +1,5 @@
-# Version: 1.2 - 2025-05-26 08:43:56 UTC - gmaisuradze-adm - Comprehensive settings.
 # Version: 1.3 - 2025-05-27 - Copilot Edit - Added Email Backend and DEFAULT_IT_EMAIL
+# No changes needed to this file for 403.html handling based on current setup.
 from pathlib import Path
 import os
 
@@ -86,7 +86,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'en-us' # Consider changing to 'ka' for Georgian if you add translations
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
@@ -104,9 +104,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/login/'
+LOGIN_URL = '/login/' # Or your actual login URL name, e.g., 'core:login'
+LOGIN_REDIRECT_URL = '/' # Or your actual home URL name, e.g., 'core:home'
+LOGOUT_REDIRECT_URL = '/login/' # Or your actual login URL name, e.g., 'core:login'
 
 # --- Email Configuration (NEW) ---
 if DEBUG:

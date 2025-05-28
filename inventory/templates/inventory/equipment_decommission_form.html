@@ -1,0 +1,52 @@
+{% extends "core/base.html" %}
+{% load i18n crispy_forms_tags %}
+
+{% block title %}{{ page_title }} - {{ equipment.name }}{% endblock title %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">{% trans "Dashboard" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'inventory:equipment_list' %}">{% trans "Inventory" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'inventory:equipment_detail' equipment.pk %}">{{ equipment.name|truncatewords:5 }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ page_title|default:_("Confirm Decommission") }}</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-0">{{ page_title|default:_("Decommission Equipment") }}</h2>
+    <p class="text-muted lead fs-5">{% trans "Equipment" %}: {{ equipment.name }} ({{ equipment.asset_tag|default:"N/A" }})</p>
+    <hr>
+
+    {% include "core/includes/messages.html" %}
+
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-0">{{ form_title|default:_("Confirm Decommissioning and Record Details") }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-danger" role="alert">
+                <h4 class="alert-heading">{% trans "Final Action!" %}</h4>
+                <p>{% blocktrans with equipment_name=equipment.name %}You are about to <strong>permanently decommission</strong> the equipment "<strong>{{ equipment_name }}</strong>". This will finalize its removal from active service.{% endblocktrans %}</p>
+                <hr>
+                <p class="mb-0">{% trans "Please ensure all details below are correct. This action will be logged." %}</p>
+            </div>
+            
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                {{ form|crispy }}
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-skull-crossbones me-1"></i> {{ submit_button_text|default:_("Confirm Decommission") }}
+                    </button>
+                    <a href="{% url 'inventory:equipment_detail' equipment.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i> {% trans "Cancel" %}
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}
