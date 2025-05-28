@@ -1,6 +1,6 @@
 from django.db import models, transaction
 from django.conf import settings
-from inventory.models import Equipment, StockItem, Location as InventoryLocation
+# from inventory.models import Equipment, StockItem, Location as InventoryLocation # <--- წაშალეთ ეს ხაზი
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
@@ -41,8 +41,6 @@ class Request(models.Model):
     STATUS_REOPENED = 'reopened'
     STATUS_REJECTED = 'rejected'
     STATUS_CANCELLED = 'cancelled'
-    # If you need a distinct "Completed by IT" status before user confirmation:
-    # STATUS_COMPLETED_BY_IT = 'completed_by_it'
 
     STATUS_CHOICES = [
         (STATUS_NEW, _('New')),
@@ -52,7 +50,6 @@ class Request(models.Model):
         (STATUS_PENDING_ORDER, _('Pending Parts/Equipment Order')),
         (STATUS_PENDING_THIRD_PARTY, _('Pending Third Party Action')),
         (STATUS_ON_HOLD_INTERNAL, _('On Hold (Internal Reasons)')),
-        # (STATUS_COMPLETED_BY_IT, _('Completed (IT Resolved)')),
         (STATUS_RESOLVED_AWAITING_CONFIRMATION, _('Resolved (Awaiting User Confirmation)')),
         (STATUS_CLOSED_CONFIRMED, _('Closed (User Confirmed)')),
         (STATUS_CLOSED_AUTO, _('Closed (Auto-Closed)')),
@@ -83,7 +80,7 @@ class Request(models.Model):
         help_text=_("სრულად აღწერეთ საკითხი, საჭიროება ან მოთხოვნის მიზეზი. მიუთითეთ ნებისმიერი შეცდომის კოდი, დეტალი და ა.შ.")
     )
     request_type = models.ForeignKey(
-        RequestType,
+        RequestType, # This is fine as RequestType is in the same models.py file
         verbose_name=_("Request Type"),
         on_delete=models.PROTECT,
         related_name='requests',
@@ -111,7 +108,7 @@ class Request(models.Model):
         help_text=_("მომხმარებელი, რომელმაც დაარეგისტრირა მოთხოვნა.")
     )
     request_location = models.ForeignKey(
-        InventoryLocation,
+        'inventory.Location',  # CHANGED TO STRING
         verbose_name=_("Request Location (Department/Room) (Optional)"),
         on_delete=models.SET_NULL,
         null=True,
@@ -130,7 +127,7 @@ class Request(models.Model):
         help_text=_("IT პერსონალი, რომელიც პასუხისმგებელია ამ მოთხოვნის შესრულებაზე.")
     )
     related_existing_equipment = models.ForeignKey(
-        Equipment,
+        'inventory.Equipment',  # CHANGED TO STRING
         verbose_name=_("Related Existing Equipment (Optional)"),
         on_delete=models.SET_NULL,
         null=True,
@@ -151,7 +148,7 @@ class Request(models.Model):
     updated_at = models.DateTimeField(_("Last Updated"), auto_now=True, editable=False)
 
     issued_equipment_items = models.ManyToManyField(
-        Equipment,
+        'inventory.Equipment',  # CHANGED TO STRING
         verbose_name=_("Issued Equipment Items (as a result of this request)"),
         blank=True,
         related_name='fulfilled_by_requests',
@@ -186,8 +183,6 @@ class Request(models.Model):
             self.date_assigned = timezone.now()
 
         final_resolution_statuses = [self.STATUS_RESOLVED_AWAITING_CONFIRMATION]
-        # If you add STATUS_COMPLETED_BY_IT, include it here:
-        # final_resolution_statuses = [self.STATUS_COMPLETED_BY_IT, self.STATUS_RESOLVED_AWAITING_CONFIRMATION]
         final_closure_statuses = [self.STATUS_CLOSED_CONFIRMED, self.STATUS_CLOSED_AUTO, self.STATUS_REJECTED, self.STATUS_CANCELLED]
 
         if status_changed:
@@ -219,7 +214,6 @@ class Request(models.Model):
         STATUS_PENDING_ORDER: 'yellow',
         STATUS_PENDING_THIRD_PARTY: 'lime',
         STATUS_ON_HOLD_INTERNAL: 'secondary',
-        # STATUS_COMPLETED_BY_IT: 'teal', # if added
         STATUS_RESOLVED_AWAITING_CONFIRMATION: 'success',
         STATUS_CLOSED_CONFIRMED: 'dark',
         STATUS_CLOSED_AUTO: 'dark',
@@ -231,7 +225,6 @@ class Request(models.Model):
     def get_status_badge_class(self):
         return f"bg-{self._status_badge_map.get(self.status, 'light text-dark')}-lt"
 
-    # Helper method for RequestUpdate to use
     @classmethod
     def get_status_badge_class_for_status_value(cls, status_value):
         return f"bg-{cls._status_badge_map.get(status_value, 'light text-dark')}-lt"
@@ -266,7 +259,7 @@ class Request(models.Model):
         return f"REQ-{self.id}: {self.subject} ({self.get_status_display()})"
 
     class Meta:
-        ordering = ['-created_at', '-priority'] # Added priority
+        ordering = ['-created_at', '-priority']
         verbose_name = _("IT Support Request")
         verbose_name_plural = _("IT Support Requests")
         permissions = [
@@ -280,13 +273,13 @@ class Request(models.Model):
 
 class IssuedStockLink(models.Model):
     request = models.ForeignKey(
-        Request,
+        Request, # This is fine
         on_delete=models.CASCADE,
         verbose_name=_("Request"),
         related_name="issued_stock_links"
     )
     stock_item = models.ForeignKey(
-        StockItem,
+        'inventory.StockItem',  # CHANGED TO STRING
         on_delete=models.PROTECT,
         verbose_name=_("Stock Item Issued")
     )
@@ -315,7 +308,7 @@ class IssuedStockLink(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        from inventory.models import StockTransaction
+        from inventory.models import StockTransaction, StockItem # Import StockItem here
 
         is_new = self.pk is None
         old_quantity_issued = 0
@@ -326,7 +319,7 @@ class IssuedStockLink(models.Model):
             except IssuedStockLink.DoesNotExist:
                 is_new = True
 
-        if is_new: # Perform stock check ONLY for new entries before saving
+        if is_new: 
             stock_item_instance = StockItem.objects.get(pk=self.stock_item_id)
             if stock_item_instance.current_quantity < self.quantity_issued:
                 raise ValueError(
@@ -334,11 +327,10 @@ class IssuedStockLink(models.Model):
                     {'item': stock_item_instance.name, 'qty': self.quantity_issued, 'avail': stock_item_instance.current_quantity }
                 )
         
-        super().save(*args, **kwargs) # Save first to get PK if new, or save updates
+        super().save(*args, **kwargs)
 
         if is_new:
             with transaction.atomic():
-                # Re-fetch with select_for_update within transaction
                 stock_item_instance_locked = StockItem.objects.select_for_update().get(pk=self.stock_item_id)
                 stock_item_instance_locked.current_quantity -= self.quantity_issued
                 stock_item_instance_locked.save(update_fields=['current_quantity'])
@@ -350,25 +342,23 @@ class IssuedStockLink(models.Model):
                     related_request=self.request,
                     notes=_("Issued for REQ-{req_id} via IssuedStockLink ID: {link_id}").format(req_id=self.request.id, link_id=self.id)
                 )
-        elif old_quantity_issued != self.quantity_issued: # If quantity changed
+        elif old_quantity_issued != self.quantity_issued: 
             with transaction.atomic():
                 stock_item_instance_locked = StockItem.objects.select_for_update().get(pk=self.stock_item_id)
                 difference = self.quantity_issued - old_quantity_issued
                 
-                # Check if enough for the increase or if reduction is valid
                 if difference > 0 and stock_item_instance_locked.current_quantity < difference:
                      raise ValueError(
                          _("Not enough stock for %(item)s to adjust quantity. Difference: %(diff)s, Available: %(avail)s.") %
                         {'item': stock_item_instance_locked.name, 'diff': difference, 'avail': stock_item_instance_locked.current_quantity }
                     )
-                # If reducing issued quantity (difference is negative), it means stock is returned. current_quantity will increase.
                 
                 stock_item_instance_locked.current_quantity -= difference
                 stock_item_instance_locked.save(update_fields=['current_quantity'])
                 StockTransaction.objects.create(
                     stock_item=stock_item_instance_locked,
-                    transaction_type='adjustment_issue',
-                    quantity_changed=-difference,
+                    transaction_type='adjustment_issue', # Consider a more specific type or use 'issue' with negative for return
+                    quantity_changed=-difference, # This will be positive if reducing issued (difference is negative)
                     user=self.issued_by,
                     related_request=self.request,
                     notes=_("Quantity adjustment for REQ-{req_id} on Link ID: {link_id}. Old: {old_q}, New: {new_q}").format(
@@ -377,7 +367,7 @@ class IssuedStockLink(models.Model):
                 )
 
     def delete(self, *args, **kwargs):
-        from inventory.models import StockTransaction
+        from inventory.models import StockTransaction, StockItem # Import StockItem here
         with transaction.atomic():
             try:
                 stock_item_instance = StockItem.objects.select_for_update().get(pk=self.stock_item_id)
@@ -385,18 +375,21 @@ class IssuedStockLink(models.Model):
                 stock_item_instance.save(update_fields=['current_quantity'])
                 StockTransaction.objects.create(
                     stock_item=stock_item_instance,
-                    transaction_type='return_from_issue',
+                    transaction_type='return_from_issue', # Consider a more specific type
                     quantity_changed=self.quantity_issued,
-                    user=self.issued_by, # Should be the user performing deletion or system
+                    user=self.issued_by, 
                     related_request=self.request,
                     notes=_("Stock returned from REQ-{req_id} due to deletion of IssuedStockLink ID: {link_id}").format(req_id=self.request.id, link_id=self.id)
                 )
             except StockItem.DoesNotExist:
-                pass
+                pass # Or log an error if stock item not found, though unlikely if link exists
         super().delete(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.quantity_issued} x {self.stock_item.name} for REQ-{self.request.id}"
+        # Accessing self.stock_item might cause a query if not pre-fetched
+        # Consider select_related('stock_item') where IssuedStockLink is queried
+        stock_item_name = self.stock_item.name if self.stock_item_id else _("Unknown Stock Item")
+        return f"{self.quantity_issued} x {stock_item_name} for REQ-{self.request.id}"
 
     class Meta:
         verbose_name = _("Issued Stock Item Log")
@@ -405,7 +398,7 @@ class IssuedStockLink(models.Model):
 
 class RequestUpdate(models.Model):
     request = models.ForeignKey(
-        Request,
+        Request, # This is fine
         verbose_name=_("Associated Request"),
         on_delete=models.CASCADE,
         related_name='updates_history'
@@ -426,7 +419,7 @@ class RequestUpdate(models.Model):
         max_length=35,
         blank=True,
         null=True,
-        choices=Request.STATUS_CHOICES,
+        choices=Request.STATUS_CHOICES, # This is fine
         help_text=_("სტატუსი ამ განახლებამდე (თუ შეიცვალა).")
     )
     new_status = models.CharField(
@@ -434,7 +427,7 @@ class RequestUpdate(models.Model):
         max_length=35,
         blank=True,
         null=True,
-        choices=Request.STATUS_CHOICES,
+        choices=Request.STATUS_CHOICES, # This is fine
         help_text=_("სტატუსი ამ განახლების შემდეგ (თუ შეიცვალა).")
     )
 
