@@ -1,3 +1,5 @@
+# inventory/forms.py
+
 from django import forms
 from .models import Equipment, Category, Status, Location, Supplier # Ensure Status is imported
 from django.utils import timezone
@@ -34,8 +36,9 @@ class BootstrapFormMixin:
             if isinstance(field.widget, forms.DateInput):
                 if 'form-control' not in field.widget.attrs.get('class', ''):
                     field.widget.attrs['class'] = f"{field.widget.attrs.get('class', '')} form-control".strip()
-                if field.widget.attrs.get('type', 'date') == 'date':
-                    field.widget.attrs['type'] = 'date'
+                # Ensure type="date" is set for DateInput widgets if not already specified
+                if field.widget.input_type != 'date': # Check current input_type
+                    field.widget.input_type = 'date'
 
 
 class CategoryForm(BootstrapFormMixin, forms.ModelForm):
@@ -59,12 +62,13 @@ class CategoryForm(BootstrapFormMixin, forms.ModelForm):
 class StatusForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Status
-        fields = ['name', 'description', 'is_active', 'is_decommissioned']
+        fields = ['name', 'description', 'is_active_for_use', 'is_decommissioned', 'is_in_storage']
         labels = {
             'name': _("სტატუსის სახელი"),
             'description': _("აღწერა"),
-            'is_active': _("აქტიურია (გამოიყენება მოწყობილობისთვის)"),
-            'is_decommissioned': _("ექსპლუატაციიდან გამოსულია"),
+            'is_active_for_use': _("აქტიურია გამოყენებისთვის"),
+            'is_decommissioned': _("ჩამოწერილია"),
+            'is_in_storage': _("საწყობშია (ხელმისაწვდომია გასაცემად)"),
         }
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3, 'placeholder': _("მაგ., მოწყობილობა გამართულად მუშაობს...")}),
@@ -73,21 +77,27 @@ class StatusForm(BootstrapFormMixin, forms.ModelForm):
 class LocationForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Location
-        fields = ['name', 'address', 'floor', 'room_number', 'notes']
+        fields = ['name', 'parent_location', 'address', 'notes']
         labels = {
-            'name': _("ლოკაციის სახელი"),
-            'address': _("მისამართი"),
-            'floor': _("სართული"),
-            'room_number': _("ოთახის ნომერი/სახელი"),
-            'notes': _("შენიშვნები"),
+            'name': _("ლოკაციის/დეპარტამენტის სახელი"),
+            'parent_location': _("მშობელი ლოკაცია (არასავალდებულო)"),
+            'address': _("მისამართი (არასავალდებულო)"),
+            'notes': _("შენიშვნები (არასავალდებულო)"),
         }
         widgets = {
             'address': forms.Textarea(attrs={'rows': 2, 'placeholder': _("მაგ., ქ. თბილისი, ჭავჭავაძის გამზ. 1")}),
             'notes': forms.Textarea(attrs={'rows': 3}),
-            'name': forms.TextInput(attrs={'placeholder': _("მაგ., მთავარი შენობა, IT განყოფილება")}),
-            'floor': forms.TextInput(attrs={'placeholder': _("მაგ., 3, ანტრესოლი")}),
-            'room_number': forms.TextInput(attrs={'placeholder': _("მაგ., 305, სერვერული")}),
+            'name': forms.TextInput(attrs={'placeholder': _("მაგ., მთავარი შენობა, IT განყოფილება, ოთახი 301")}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'parent_location' in self.fields:
+            # Ensure instance exists and has a pk before excluding
+            instance_pk = self.instance.pk if self.instance and self.instance.pk else None
+            self.fields['parent_location'].queryset = Location.objects.exclude(pk=instance_pk).order_by('name')
+            self.fields['parent_location'].empty_label = _("--------- (მშობელი არ არის არჩეული) ---------")
+
 
 class SupplierForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
@@ -111,67 +121,79 @@ class SupplierForm(BootstrapFormMixin, forms.ModelForm):
         }
 
 class EquipmentForm(BootstrapFormMixin, forms.ModelForm):
-    # Fields for displaying read-only auto-managed data on edit
     date_added_display = forms.CharField(label=_("დამატების თარიღი"), required=False, disabled=True)
     added_by_display = forms.CharField(label=_("დამამატებელი"), required=False, disabled=True)
     last_updated_display = forms.CharField(label=_("ბოლო განახლება"), required=False, disabled=True)
     updated_by_display = forms.CharField(label=_("ბოლოს განაახლა"), required=False, disabled=True)
+    # asset_tag_display - ახალი ველი, რომელიც გამოჩნდება რედაქტირებისას (თუ გსურთ)
+    asset_tag_display = forms.CharField(label=_("საინვენტარო ნომერი (შიდა ID)"), required=False, disabled=True)
+
 
     class Meta:
         model = Equipment
         fields = [
-            'name', 'asset_tag', 'serial_number', 
+            'name', 'serial_number', # 'asset_tag' ამოღებულია აქედან
             'category', 'status', 
             'current_location', 'assigned_to',
             'supplier', 'purchase_date', 'purchase_cost', 'warranty_expiry_date',
             'notes',
             # Display fields for read-only info
+            'asset_tag_display', # დავამატოთ asset_tag_display თუ გვინდა მისი ჩვენება რედაქტირებისას
             'date_added_display', 'added_by_display', 'last_updated_display', 'updated_by_display'
         ]
         labels = {
-            'name': _("მოწყობილობის სახელი"),
-            'asset_tag': _("საინვენტარო ნომერი (ტეგი)"),
-            'serial_number': _("სერიული ნომერი"),
+            'name': _("მოწყობილობის სახელი/მოდელი"),
+            # 'asset_tag': _("საინვენტარო ნომერი (შიდა ID)"), # ეს ლეიბლი ახლა asset_tag_display-სთვის იქნება, თუ მას დაამატებთ
+            'serial_number': _("სერიული ნომერი (არასავალდებულო)"),
             'category': _("კატეგორია"),
             'status': _("სტატუსი"),
-            'current_location': _("მიმდინარე ლოკაცია"),
-            'assigned_to': _("მინიჭებული მომხმარებელი"),
-            'supplier': _("მომწოდებელი"),
-            'purchase_date': _("შეძენის თარიღი"),
-            'purchase_cost': _("შეძენის ღირებულება (₾)"),
-            'warranty_expiry_date': _("გარანტიის ვადა"),
-            'notes': _("შენიშვნები"),
+            'current_location': _("მიმდინარე ლოკაცია (არასავალდებულო)"),
+            'assigned_to': _("მინიჭებული მომხმარებელი (არასავალდებულო)"),
+            'supplier': _("მომწოდებელი (არასავალდებულო)"),
+            'purchase_date': _("შეძენის თარიღი (არასავალდებულო)"),
+            'purchase_cost': _("შეძენის ღირებულება (₾) (არასავალდებულო)"),
+            'warranty_expiry_date': _("გარანტიის ვადა (არასავალდებულო)"),
+            'notes': _("შენიშვნები (არასავალდებულო)"),
         }
         widgets = {
             'purchase_date': forms.DateInput(attrs={'type': 'date'}),
             'warranty_expiry_date': forms.DateInput(attrs={'type': 'date'}),
-            'notes': forms.Textarea(attrs={'rows': 4, 'placeholder': _("დამატებითი ინფორმაცია მოწყობილობაზე...")}), # Added placeholder
+            'notes': forms.Textarea(attrs={'rows': 4, 'placeholder': _("დამატებითი ინფორმაცია მოწყობილობაზე...")}),
             'purchase_cost': forms.NumberInput(attrs={'placeholder': _("მაგ., 1500.00")}),
             'name': forms.TextInput(attrs={'placeholder': _("მაგ., ლეპტოპი Dell XPS 13")}),
-            'asset_tag': forms.TextInput(attrs={'placeholder': _("უნიკალური იდენტიფიკატორი")}),
+            # 'asset_tag': forms.TextInput(attrs={'placeholder': _("უნიკალური შიდა საინვენტარო ნომერი")}), # ეს ვიჯეტიც აღარ არის საჭირო
             'serial_number': forms.TextInput(attrs={'placeholder': _("მწარმოებლის სერიული ნომერი")}),
         }
         help_texts = {
-            'asset_tag': _("უნდა იყოს უნიკალური სისტემაში."),
-            'serial_number': _("თუ არსებობს, შეიყვანეთ. შეიძლება იყოს უნიკალური."),
+            # 'asset_tag': _("უნდა იყოს უნიკალური სისტემაში."), # ეს help_text-იც აღარ არის საჭირო
+            'serial_number': _("თუ არსებობს, შეიყვანეთ."),
             'purchase_cost': _("შეიყვანეთ მხოლოდ ციფრები."),
             'status': _("აირჩიეთ მოწყობილობის მიმდინარე მდგომარეობა."),
-            'notes': _("აქ შეგიძლიათ შეიყვანოთ ზოგადი შენიშვნები. ჩამოწერის მიზეზი ცალკე ფორმით დაფიქსირდება."),
+            'notes': _("აქ შეგიძლიათ შეიყვანოთ ზოგადი შენიშვნები."),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        if not self.instance or not self.instance.pk:
-            self.fields['purchase_date'].initial = timezone.now().date()
-            # For new items, remove display fields as they are not applicable
-            self.fields.pop('date_added_display', None)
-            self.fields.pop('added_by_display', None)
-            self.fields.pop('last_updated_display', None)
-            self.fields.pop('updated_by_display', None)
-            # Adjust Meta.fields if these are dynamically removed, or ensure template handles their absence
-        else:
-            if 'date_added_display' in self.fields: # Check if field exists before trying to set initial
+        is_new_instance = not self.instance or not self.instance.pk
+        # ამოვიღოთ _display ველები model_bound_fields-დან
+        display_fields_to_remove_on_create = ['asset_tag_display', 'date_added_display', 'added_by_display', 'last_updated_display', 'updated_by_display']
+
+        if is_new_instance:
+            if 'purchase_date' in self.fields:
+                 self.fields['purchase_date'].initial = timezone.now().date()
+            for field_name in display_fields_to_remove_on_create:
+                if field_name in self.fields: # შევამოწმოთ, რომ ველი არსებობს სანამ წავშლით
+                    self.fields.pop(field_name)
+        else: # რედაქტირების რეჟიმი
+            if 'asset_tag_display' in self.fields and self.instance and self.instance.asset_tag:
+                self.fields['asset_tag_display'].initial = self.instance.asset_tag
+            else: # თუ asset_tag_display არ არის ფორმის ველებში (მაგ. ახალზე წაიშალა), ან asset_tag არ არსებობს
+                if 'asset_tag_display' in self.fields: # თუ რედაქტირებისას ველი არსებობს, მაგრამ asset_tag ცარიელია
+                    self.fields['asset_tag_display'].initial = _("ჯერ არ არის გენერირებული")
+
+
+            if 'date_added_display' in self.fields:
                 self.fields['date_added_display'].initial = self.instance.date_added.strftime("%Y-%m-%d %H:%M") if self.instance.date_added else "-"
             if 'added_by_display' in self.fields:
                 self.fields['added_by_display'].initial = str(self.instance.added_by) if self.instance.added_by else "-"
@@ -180,12 +202,16 @@ class EquipmentForm(BootstrapFormMixin, forms.ModelForm):
             if 'updated_by_display' in self.fields:
                 self.fields['updated_by_display'].initial = str(self.instance.updated_by) if self.instance.updated_by else "-"
 
-        model_bound_fields = [f for f in self.Meta.fields if not f.endswith('_display')]
-        for field_name in model_bound_fields:
-            if field_name in self.fields:
-                model_field = self.Meta.model._meta.get_field(field_name)
-                if model_field.blank:
-                    self.fields[field_name].required = False
+        # ველების required სტატუსის დაყენება მოდელის blank ატრიბუტის მიხედვით
+        # ამჯერად, ჩვენ ვივლით ფორმის ველებზე და არა Meta.fields-ზე, რადგან Meta.fields შეიცვალა
+        for field_name, field_obj in self.fields.items():
+            if not field_name.endswith('_display'): # გამოვრიცხოთ ჩვენი display ველები
+                try:
+                    model_field = self.Meta.model._meta.get_field(field_name)
+                    if model_field.blank and not model_field.has_default(): # თუ მოდელში blank=True და არ აქვს default
+                        field_obj.required = False
+                except Exception: # forms.models.FieldDoesNotExist ან AttributeError
+                    pass 
         
         fk_fields_with_empty_label = ['category', 'status', 'current_location', 'supplier', 'assigned_to']
         for fk_field_name in fk_fields_with_empty_label:
@@ -193,13 +219,20 @@ class EquipmentForm(BootstrapFormMixin, forms.ModelForm):
                 if not self.fields[fk_field_name].required:
                     self.fields[fk_field_name].empty_label = _("--------- (არ არის არჩეული) ---------")
                 else:
-                    self.fields[fk_field_name].empty_label = _("აირჩიეთ...")
+                    self.fields[fk_field_name].empty_label = _("აირჩიეთ...") 
         
-        if 'status' in self.fields and self.fields['status'].required:
-            self.fields['status'].empty_label = _("აირჩიეთ სტატუსი...")
-            # Ensure the write-off status is not directly selectable here if 'is_decommissioned=True'
-            # Users should use the 'Mark for Write-Off' flow for that.
-            self.fields['status'].queryset = Status.objects.filter(is_decommissioned=False)
+        if 'status' in self.fields and isinstance(self.fields['status'], forms.ModelChoiceField):
+            if self.fields['status'].required:
+                 self.fields['status'].empty_label = _("აირჩიეთ სტატუსი...")
+            # რედაქტირებისას, თუ მიმდინარე სტატუსი is_decommissioned=True, ის მაინც უნდა გამოჩნდეს სიაში
+            current_status_pk = self.instance.status_id if self.instance and self.instance.status_id else None
+            status_queryset = Status.objects.filter(is_decommissioned=False)
+            if current_status_pk:
+                current_status_obj = Status.objects.filter(pk=current_status_pk).first()
+                if current_status_obj and current_status_obj.is_decommissioned:
+                    status_queryset = status_queryset | Status.objects.filter(pk=current_status_pk)
+            
+            self.fields['status'].queryset = status_queryset.order_by('name')
 
 
 class EquipmentMarkForWriteOffForm(BootstrapFormMixin, forms.ModelForm):
@@ -212,9 +245,4 @@ class EquipmentMarkForWriteOffForm(BootstrapFormMixin, forms.ModelForm):
 
     class Meta:
         model = Equipment
-        fields = ['write_off_reason'] # Only the reason is directly from user input here
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # No special init logic needed for this simple form currently.
-        # The equipment instance context will be handled in the view.
+        fields = ['write_off_reason'] # მხოლოდ ეს ველი გვჭირდება ამ ფორმისთვის

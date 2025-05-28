@@ -1,6 +1,7 @@
 # Version: 1.0 - 2025-05-26 09:41:57 UTC - gmaisuradze-adm - Initial admin setup for requests_app
+# Updated: 2025-05-28 - To align with model changes
 from django.contrib import admin
-from .models import RequestType, Request, RequestUpdate
+from .models import RequestType, Request, RequestUpdate # Ensure InventoryLocation is not needed here unless used directly
 
 @admin.register(RequestType)
 class RequestTypeAdmin(admin.ModelAdmin):
@@ -11,11 +12,14 @@ class RequestUpdateInline(admin.TabularInline): # Or admin.StackedInline for a d
     model = RequestUpdate
     fk_name = 'request'
     extra = 0 # Number of empty forms to display
-    readonly_fields = ('updated_by', 'update_time', 'old_status', 'new_status') # Make fields read-only in inline
-    can_delete = False # Optionally prevent deleting updates from the Request admin page
+    # Making fields readonly in the inline if they are auto-set or should not be changed here
+    readonly_fields = ('updated_by', 'update_time', 'old_status', 'new_status', 'notes') 
+    can_delete = False 
 
     def has_add_permission(self, request, obj=None):
-        return False # Prevent adding new updates directly from the inline on Request page
+        # Updates should ideally be created programmatically when a Request is saved with changes,
+        # or via a specific action, not manually added via inline in this manner.
+        return False 
 
 @admin.register(Request)
 class RequestAdmin(admin.ModelAdmin):
@@ -26,56 +30,97 @@ class RequestAdmin(admin.ModelAdmin):
         'status', 
         'priority', 
         'requested_by', 
-        'assigned_to', 
+        'assigned_to',
+        'request_location', # Added request_location
         'created_at', 
-        'updated_at'
+        'updated_at',
+        'resolved_at', # Added resolved_at
+        'closed_at'    # Added closed_at
     )
-    list_filter = ('status', 'priority', 'request_type', 'created_at', 'assigned_to')
-    search_fields = ('id', 'subject', 'description', 'requested_by__username', 'assigned_to__username')
-    autocomplete_fields = ['requested_by', 'assigned_to', 'related_equipment', 'request_type']
-    readonly_fields = ('created_at', 'updated_at', 'resolved_at')
+    list_filter = ('status', 'priority', 'request_type', 'created_at', 'assigned_to', 'request_location') # Added request_location
+    search_fields = ('id', 'subject', 'description', 'requested_by__username', 'assigned_to__username', 'request_location__name') # Added request_location__name
+    
+    # Corrected 'related_equipment' to 'related_existing_equipment'
+    # Added 'request_location' to autocomplete fields as it's a ForeignKey
+    autocomplete_fields = ['requested_by', 'assigned_to', 'related_existing_equipment', 'request_type', 'request_location'] 
+    
+    # Added 'date_assigned' to readonly_fields as it's auto-set by model's save method
+    readonly_fields = ('created_at', 'updated_at', 'resolved_at', 'closed_at', 'date_assigned') 
     
     fieldsets = (
         ("Request Details", {
-            'fields': ('subject', 'description', 'request_type', 'related_equipment')
+            'fields': ('subject', 'description', 'request_type', 'related_existing_equipment', 'request_location') # Corrected and added fields
         }),
         ("Status & Priority", {
             'fields': ('status', 'priority')
         }),
-        ("Assignment", {
-            'fields': ('requested_by', 'assigned_to')
+        ("Assignment & Requester", { # Renamed section for clarity
+            'fields': ('requested_by', 'assigned_to', 'date_assigned') # Added date_assigned (readonly)
         }),
-        ("Resolution", {
-            'fields': ('resolution_notes', 'resolved_at')
+        ("Resolution", { # This section might be for notes related to how it was resolved
+            'fields': ('resolution_notes',) # resolved_at is now in Timestamps
         }),
         ("Timestamps", {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',) # Make this section collapsible
+            'fields': ('created_at', 'updated_at', 'resolved_at', 'closed_at'), # Added resolved_at, closed_at
+            'classes': ('collapse',) 
         }),
     )
-    inlines = [RequestUpdateInline] # Add the updates inline
+    inlines = [RequestUpdateInline]
+
+    # Optional: Add actions, e.g., to quickly change status
+    # actions = ['mark_as_in_progress', 'mark_as_resolved']
+
+    # def mark_as_in_progress(self, request, queryset):
+    #     queryset.update(status='in_progress')
+    # mark_as_in_progress.short_description = "Mark selected requests as In Progress"
+
+    # def mark_as_resolved(self, request, queryset):
+    #     for req in queryset:
+    #         req.status = 'resolved_awaiting_confirmation' # Or your appropriate resolved status
+    #         req.save() # This will trigger the model's save logic for resolved_at
+    # mark_as_resolved.short_description = "Mark selected requests as Resolved"
+
 
 @admin.register(RequestUpdate)
 class RequestUpdateAdmin(admin.ModelAdmin):
-    list_display = ('request_id_link', 'updated_by', 'update_time', 'notes_summary', 'old_status', 'new_status')
+    list_display = ('request_id_link', 'updated_by', 'update_time', 'notes_summary', 'get_old_status_display', 'get_new_status_display')
     list_filter = ('update_time', 'updated_by')
     search_fields = ('request__id', 'request__subject', 'notes', 'updated_by__username')
-    readonly_fields = ('request', 'updated_by', 'update_time', 'old_status', 'new_status', 'notes') # Make most fields read-only
+    # All fields are essentially read-only as updates are logged programmatically
+    readonly_fields = ('request', 'updated_by', 'update_time', 'old_status', 'new_status', 'notes') 
 
     def request_id_link(self, obj):
         from django.urls import reverse
         from django.utils.html import format_html
-        link = reverse("admin:requests_app_request_change", args=[obj.request.id])
-        return format_html('<a href="{}">{}</a>', link, obj.request.id)
+        if obj.request:
+            link = reverse("admin:requests_app_request_change", args=[obj.request.id])
+            return format_html('<a href="{}">REQ-{}</a>', link, obj.request.id)
+        return "-"
     request_id_link.short_description = 'Request ID'
     request_id_link.admin_order_field = 'request__id'
 
     def notes_summary(self, obj):
-        return (obj.notes[:75] + '...') if len(obj.notes) > 75 else obj.notes
+        return (obj.notes[:75] + '...') if obj.notes and len(obj.notes) > 75 else obj.notes
     notes_summary.short_description = 'Notes'
 
+    # Use methods from the model for displaying status choices
+    def get_old_status_display(self, obj):
+        return obj.get_old_status_display_safe()
+    get_old_status_display.short_description = 'Old Status'
+    get_old_status_display.admin_order_field = 'old_status'
+
+    def get_new_status_display(self, obj):
+        return obj.get_new_status_display_safe()
+    get_new_status_display.short_description = 'New Status'
+    get_new_status_display.admin_order_field = 'new_status'
+
     def has_add_permission(self, request):
-        return False # Prevent adding RequestUpdate directly; should be via Request
+        return False 
 
     def has_change_permission(self, request, obj=None):
-        return False # Prevent changing RequestUpdate directly
+        # Allow viewing but not changing via admin.
+        # Changes are logged, not edited.
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        return False # Log entries should generally not be deleted

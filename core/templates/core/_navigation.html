@@ -80,7 +80,7 @@
                         <li class="nav-item {% if request.resolver_match.app_name == 'requests_app' and request.resolver_match.url_name == 'admin_request_list' %}active{% endif %}">
                             <a class="nav-link" href="{% url 'requests_app:admin_request_list' %}">
                                 <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-clipboard-list icon"></i></span>
-                                <span class="nav-link-title">{% trans "ყველა მოთხოვნა" %}</span>
+                                <span class="nav-link-title">{% trans "მოთხოვნები" %}</span>
                             </a>
                         </li>
                     {% else %}

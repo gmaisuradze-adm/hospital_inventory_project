@@ -24,14 +24,14 @@
         <form method="get" class="row g-3 align-items-end">
             <div class="col-md-3">
                 <label for="search_query" class="form-label">{% trans "Search" %}</label>
-                <input type="search" name="q" id="search_query" class="form-control" placeholder="{% trans "ID, Subject, Requester..." %}" value="{{ request.GET.q }}">
+                <input type="search" name="q" id="search_query" class="form-control" placeholder="{% trans "ID, Subject, Requester..." %}" value="{{ current_q }}">
             </div>
             <div class="col-md-2">
                 <label for="status_filter" class="form-label">{% trans "Status" %}</label>
                 <select name="status" id="status_filter" class="form-select">
                     <option value="">{% trans "All Statuses" %}</option>
                     {% for status_val, status_display in status_choices_for_filter %}
-                        <option value="{{ status_val }}" {% if request.GET.status == status_val %}selected{% endif %}>
+                        <option value="{{ status_val }}" {% if current_status == status_val %}selected{% endif %}>
                             {{ status_display }}
                         </option>
                     {% endfor %}
@@ -42,7 +42,7 @@
                 <select name="type" id="type_filter" class="form-select">
                     <option value="">{% trans "All Types" %}</option>
                     {% for type_obj in types_for_filter %}
-                        <option value="{{ type_obj.pk }}" {% if request.GET.type == type_obj.pk|stringformat:"s" %}selected{% endif %}>
+                        <option value="{{ type_obj.pk }}" {% if current_type == type_obj.pk|stringformat:"s" %}selected{% endif %}>
                             {{ type_obj.name }}
                         </option>
                     {% endfor %}
@@ -53,11 +53,11 @@
                 <select name="assigned_to" id="assigned_to_filter" class="form-select">
                     <option value="">{% trans "Anyone" %}</option>
                     {% for staff_user in staff_users_for_filter %}
-                        <option value="{{ staff_user.pk }}" {% if request.GET.assigned_to == staff_user.pk|stringformat:"s" %}selected{% endif %}>
+                        <option value="{{ staff_user.pk }}" {% if current_assigned_to == staff_user.pk|stringformat:"s" %}selected{% endif %}>
                             {{ staff_user.get_full_name|default:staff_user.username }}
                         </option>
                     {% endfor %}
-                     <option value="unassigned" {% if request.GET.assigned_to == "unassigned" %}selected{% endif %}>{% trans "Unassigned" %}</option>
+                     <option value="unassigned" {% if current_assigned_to == "unassigned" %}selected{% endif %}>{% trans "Unassigned" %}</option>
                 </select>
             </div>
             <div class="col-md-auto">
@@ -65,7 +65,7 @@
                     <i class="ti ti-filter me-1"></i> {% trans "Filter" %}
                 </button>
             </div>
-             {% if request.GET.q or request.GET.status or request.GET.type or request.GET.assigned_to %}
+             {% if current_q or current_status or current_type or current_assigned_to %}
             <div class="col-md-auto">
                  <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-outline-secondary w-100">
                     <i class="ti ti-clear-all me-1"></i> {% trans "Clear" %}
@@ -96,40 +96,31 @@
                     <tbody>
                         {% for request_obj in requests %}
                         <tr>
-                            <td><a href="{% url 'requests_app:request_detail' pk=request_obj.pk %}">#{{ request_obj.id }}</a></td>
+                            <td><a href="{{ request_obj.get_absolute_url }}">#{{ request_obj.id }}</a></td>
                             <td>
-                                <a href="{% url 'requests_app:request_detail' pk=request_obj.pk %}">
+                                <a href="{{ request_obj.get_absolute_url }}">
                                     {{ request_obj.subject|truncatewords:8 }}
                                 </a>
                             </td>
                             <td>{{ request_obj.request_type.name|default:"-" }}</td>
                             <td>{{ request_obj.requested_by.get_full_name|default:request_obj.requested_by.username }}</td>
                             <td>
-                                {% if request_obj.status == 'new' %}
-                                    <span class="badge bg-primary-lt">{% trans "New" %}</span>
-                                {% elif request_obj.status == 'in_progress' %}
-                                    <span class="badge bg-info-lt">{% trans "In Progress" %}</span>
-                                {% elif request_obj.status == 'on_hold' %}
-                                    <span class="badge bg-warning-lt">{% trans "On Hold" %}</span>
-                                {% elif request_obj.status == 'resolved' %}
-                                    <span class="badge bg-success-lt">{% trans "Resolved" %}</span>
-                                {% elif request_obj.status == 'closed' %}
-                                    <span class="badge bg-secondary-lt">{% trans "Closed" %}</span>
-                                {% elif request_obj.status == 'cancelled' %}
-                                    <span class="badge bg-danger-lt">{% trans "Cancelled" %}</span>
-                                {% else %}
-                                    <span class="badge bg-dark-lt">{{ request_obj.get_status_display }}</span>
-                                {% endif %}
+                                <span class="badge {{ request_obj.get_status_badge_class }}">{{ request_obj.get_status_display }}</span>
                             </td>
                             <td>{{ request_obj.created_at|date:"Y-m-d H:i" }}</td>
-                            <td>{{ request_obj.assigned_to.get_full_name|default:_("Unassigned") }}</td>
+                            <td>
+                                {% if request_obj.assigned_to %}
+                                    {{ request_obj.assigned_to.get_full_name|default:request_obj.assigned_to.username }}
+                                {% else %}
+                                    {% trans "Unassigned" %}
+                                {% endif %}
+                            </td>
                             <td>
                                 <div class="btn-list flex-nowrap">
-                                    <a href="{% url 'requests_app:request_detail' pk=request_obj.pk %}" class="btn btn-sm btn-outline-primary" title="{% trans "View Details" %}">
+                                    <a href="{{ request_obj.get_absolute_url }}" class="btn btn-sm btn-outline-primary" title="{% trans "View Details" %}">
                                         <i class="ti ti-eye"></i>
                                     </a>
-                                    {# Assuming staff can edit, and edit link depends on status #}
-                                    {% if user.is_staff and request_obj.status != 'closed' and request_obj.status != 'resolved' and request_obj.status != 'cancelled' %}
+                                    {% if user.is_staff and request_obj.can_be_edited_by_staff %}
                                     <a href="{% url 'requests_app:request_edit' pk=request_obj.pk %}" class="btn btn-sm btn-outline-secondary" title="{% trans "Edit Request" %}">
                                         <i class="ti ti-edit"></i>
                                     </a>
@@ -166,7 +157,16 @@
                             <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true"><i class="ti ti-chevron-left"></i> {% trans "Prev" %}</a></li>
                         {% endif %}
                         
-                        <li class="page-item active" aria-current="page"><a class="page-link" href="#">{{ page_obj.number }}</a></li>
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item"><a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a></li>
+                            {% elif num == page_obj.paginator.page_range.0 or num == page_obj.paginator.page_range.1 or num == page_obj.paginator.num_pages or num == page_obj.paginator.num_pages|add:'-1' %}
+                                {% ifchanged %}<li class="page-item disabled"><span class="page-link">...</span></li>{% endifchanged %}
+                                 <li class="page-item"><a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a></li>
+                            {% endif %}
+                        {% endfor %}
                         
                         {% if page_obj.has_next %}
                             <li class="page-item">
@@ -193,19 +193,19 @@
                 <i class="ti ti-mood-empty icon"></i>
             </div>
             <p class="empty-title">
-                {% if request.GET.q or request.GET.status or request.GET.type or request.GET.assigned_to %}
+                {% if current_q or current_status or current_type or current_assigned_to %}
                     {% trans "No IT requests found matching your criteria." %}
                 {% else %}
                     {% trans "No IT requests found." %}
                 {% endif %}
             </p>
-            {% if request.GET.q or request.GET.status or request.GET.type or request.GET.assigned_to %}
+            {% if current_q or current_status or current_type or current_assigned_to %}
                 <p class="empty-subtitle text-muted">
                     {% trans "Try adjusting your search or filter terms, or" %} <a href="{% url 'requests_app:admin_request_list' %}">{% trans "clear filters" %}</a>.
                 </p>
             {% endif %}
             {% if perms.requests_app.add_request %}
-                {% if not request.GET.q and not request.GET.status and not request.GET.type and not request.GET.assigned_to %}
+                {% if not current_q and not current_status and not current_type and not current_assigned_to %}
                 <div class="empty-action">
                     <a href="{% url 'requests_app:request_create' %}" class="btn btn-primary">
                         <i class="ti ti-plus me-1"></i>
