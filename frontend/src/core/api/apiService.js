@@ -62,9 +62,9 @@ api.interceptors.response.use(
 
 // API module for each section
 export const authAPI = {
-  login: (credentials) => api.post('/auth/login', credentials),
-  logout: () => api.post('/auth/logout'),
-  checkAuth: () => api.get('/auth/check')
+  login: (credentials) => api.post('/api/auth/login', credentials),
+  logout: () => api.post('/api/auth/logout'),
+  checkAuth: () => api.get('/api/auth/check')
 };
 
 export const inventoryAPI = {

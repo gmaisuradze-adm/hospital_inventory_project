@@ -1,11 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
 import jwtDecode from 'jwt-decode';
-
-// Set axios base URL for API calls
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3003'; // Changed port to 3003
-axios.defaults.baseURL = API_BASE_URL;
-console.log('Setting axios baseURL to:', API_BASE_URL);
+import api from '../api/apiService';
 
 const AuthContext = createContext();
 
@@ -37,11 +32,11 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        // Set axios default header
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        // Set API default header
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
         // Get user data
-        const response = await axios.get('/api/auth/user'); // Ensure this path is relative to baseURL
+        const response = await api.get('/api/auth/user');
         setUser(response.data);
         setIsAuthenticated(true);
       } catch (err) {
@@ -61,16 +56,14 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     console.log('Login attempt with:', credentials);
-    console.log('Axios baseURL:', axios.defaults.baseURL);
-    console.log('REACT_APP_API_URL from env:', process.env.REACT_APP_API_URL); // Log the env variable
     
     try {
-      const response = await axios.post('/api/auth/login', credentials); // Ensure this path is relative to baseURL
+      const response = await api.post('/api/auth/login', credentials);
       console.log('Login response:', response.data);
       const { token, user } = response.data;
       
       localStorage.setItem('token', token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       setUser(user);
       setIsAuthenticated(true);
@@ -88,7 +81,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
-    delete axios.defaults.headers.common['Authorization'];
+    delete api.defaults.headers.common['Authorization'];
     setUser(null);
     setIsAuthenticated(false);
   };
