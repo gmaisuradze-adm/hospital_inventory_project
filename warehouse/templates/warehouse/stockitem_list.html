@@ -14,7 +14,7 @@
 {% block page_action_buttons %}
     {% if perms.warehouse.add_stockitem %}
         <a href="{% url 'warehouse:stockitem_add' %}" class="btn btn-primary">
-            <i class="ti ti-plus me-1"></i>
+            <i class="ti ti-plus"></i>
             {% trans "Add New Item" %}
         </a>
     {% endif %}
@@ -57,16 +57,15 @@
                     <option value="below_minimum" {% if request.GET.stock_status == "below_minimum" %}selected{% endif %}>{% trans "Below Minimum" %}</option>
                     <option value="out_of_stock" {% if request.GET.stock_status == "out_of_stock" %}selected{% endif %}>{% trans "Out of Stock" %}</option>
                 </select>
-            </div>
-            <div class="col-md-auto">
+            </div>            <div class="col-md-auto">
                 <button type="submit" class="btn btn-success w-100">
-                    <i class="ti ti-filter me-1"></i> {% trans "Filter" %}
+                    <i class="ti ti-filter"></i> {% trans "Filter" %}
                 </button>
             </div>
             {% if request.GET.q or request.GET.category or request.GET.supplier or request.GET.stock_status %}
             <div class="col-md-auto">
-                 <a href="{% url 'warehouse:stockitem_list' %}" class="btn btn-outline-secondary w-100">
-                    <i class="ti ti-clear-all me-1"></i> {% trans "Clear" %}
+                 <a href="{% url 'warehouse:stockitem_list' %}" class="btn btn-secondary w-100">
+                    <i class="ti ti-clear-all"></i> {% trans "Clear" %}
                  </a>
             </div>
             {% endif %}
@@ -116,21 +115,20 @@
                                 {% else %}
                                     <span class="badge bg-success-lt">{% trans "In Stock" %}</span>
                                 {% endif %}
-                            </td>
-                            <td>
+                            </td>                            <td>
                                 <div class="btn-list flex-nowrap">
                                     {% if perms.warehouse.view_stockitem %}
-                                    <a href="{% url 'warehouse:stockitem_detail' pk=item.pk %}" class="btn btn-sm btn-outline-primary" title="{% trans "View Details" %}">
+                                    <a href="{% url 'warehouse:stockitem_detail' pk=item.pk %}" class="btn btn-primary" title="{% trans "View Details" %}">
                                         <i class="ti ti-eye"></i>
                                     </a>
                                     {% endif %}
                                     {% if perms.warehouse.change_stockitem %}
-                                    <a href="{% url 'warehouse:stockitem_edit' pk=item.pk %}" class="btn btn-sm btn-outline-secondary" title="{% trans "Edit" %}">
+                                    <a href="{% url 'warehouse:stockitem_edit' pk=item.pk %}" class="btn btn-secondary" title="{% trans "Edit" %}">
                                         <i class="ti ti-edit"></i>
                                     </a>
                                     {% endif %}
                                     {% if perms.warehouse.delete_stockitem %}
-                                    <a href="{% url 'warehouse:stockitem_delete' pk=item.pk %}" class="btn btn-sm btn-outline-danger" title="{% trans "Delete" %}">
+                                    <a href="{% url 'warehouse:stockitem_delete' pk=item.pk %}" class="btn btn-danger" title="{% trans "Delete" %}">
                                         <i class="ti ti-trash"></i>
                                     </a>
                                     {% endif %}
@@ -204,10 +202,9 @@
                 </p>
             {% endif %}
             {% if perms.warehouse.add_stockitem %}
-                {% if not request.GET.q and not request.GET.category and not request.GET.supplier and not request.GET.stock_status %}
-                <div class="empty-action">
+                {% if not request.GET.q and not request.GET.category and not request.GET.supplier and not request.GET.stock_status %}                <div class="empty-action">
                     <a href="{% url 'warehouse:stockitem_add' %}" class="btn btn-primary">
-                        <i class="ti ti-plus me-1"></i>
+                        <i class="ti ti-plus"></i>
                         {% trans "Add New Item" %}
                     </a>
                 </div>

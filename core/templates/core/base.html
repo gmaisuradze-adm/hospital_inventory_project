@@ -7,10 +7,10 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
     
     <title>{% block page_title_full %}{% block page_title_prefix %}{% endblock page_title_prefix %}{% block page_title %}{% trans "აიტი ინვენტარის სისტემა" %}{% endblock page_title %}{% block page_title_suffix %}{% endblock page_title_suffix %}{% endblock page_title_full %}</title>
-    
-    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
+      <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
     <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <link rel="stylesheet" href="{% static 'core/css/custom.css' %}">
 
     {% block extra_css %}{% endblock extra_css %}
@@ -113,10 +113,9 @@
 
             {% block page_wrapper_end %}{% endblock %}
         </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> 
+    </div>    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'core/js/custom.js' %}"></script>
 
     {% block extra_js_before_jquery %}{% endblock %}

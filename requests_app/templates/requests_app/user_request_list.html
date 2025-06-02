@@ -9,7 +9,7 @@
 
 {% block page_action_buttons %}
     <a href="{% url 'requests_app:request_create' %}" class="btn btn-primary"> {# Changed to btn-primary for consistency with admin list #}
-        <i class="ti ti-plus me-1"></i> {# Using Tabler Icons for consistency #}
+        <i class="ti ti-plus"></i> {# Using Tabler Icons for consistency #}
         {% trans "Submit New Request" %}
     </a>
 {% endblock page_action_buttons %}
@@ -51,9 +51,8 @@
                                 {% else %}
                                     {% trans "Unassigned" %}
                                 {% endif %}
-                            </td>
-                            <td>
-                                <a href="{{ req.get_absolute_url }}" class="btn btn-sm btn-outline-primary" title="{% trans "View Details" %}">
+                            </td>                            <td>
+                                <a href="{{ req.get_absolute_url }}" class="btn btn-primary" title="{% trans "View Details" %}">
                                     <i class="ti ti-eye"></i> {# Using Tabler Icons #}
                                 </a>
                             </td>
@@ -127,10 +126,9 @@
             </p>
             <p class="empty-subtitle text-muted">
                 {% trans "Click the button above to create your first request." %}
-            </p>
-            <div class="empty-action">
+            </p>            <div class="empty-action">
                  <a href="{% url 'requests_app:request_create' %}" class="btn btn-primary">
-                    <i class="ti ti-plus me-1"></i>
+                    <i class="ti ti-plus"></i>
                     {% trans "Submit New Request" %}
                 </a>
             </div>

@@ -1,0 +1,44 @@
+/* Version: 1.0 - 2025-05-26 - Basic custom styles */
+body {
+    font-family: sans-serif;
+    padding-top: 56px; /* Adjust if navbar height changes */
+    /* background-color: #f8f9fa; */ /* Light gray background */
+}
+
+main.container {
+    min-height: calc(100vh - 56px - 73px - 56px); /* Full height minus navbar, footer, and some margin */
+}
+
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.card {
+    margin-bottom: 1.5rem;
+}
+
+/* Login/Register page styling */
+.auth-form-container {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+}
+
+.alert-debug { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+.alert-info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+.alert-success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+.alert-warning { background-color: #fff3cd; border-color: #ffeeba; color: #856404; }
+.alert-error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; } /* Django uses 'error' tag */
+.alert-danger { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; } /* Bootstrap class if tags is 'danger' */
+
+
+/* Badge styling for status in tables */
+.badge.bg-success { color: white; }
+.badge.bg-warning { color: black; } /* Ensure text is readable */
+.badge.bg-danger { color: white; }
+.badge.bg-secondary { color: white; }
+.badge.bg-info { color: white; }

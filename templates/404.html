@@ -1,0 +1,177 @@
+{% extends "core/base.html" %}
+{% load i18n %}
+
+{% block page_title %}გვერდი ვერ მოიძებნა - 404{% endblock page_title %}
+
+{% block page_header_title %}გვერდი ვერ მოიძებნა{% endblock %}
+
+{% block content %}
+<div class="container-xl error-page-container">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="empty">
+                <div class="empty-img error-icon-wrapper">
+                    <div class="error-code-bg text-primary">404</div>
+                    <div class="error-icon error-icon-float">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon text-primary" width="140" height="140" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M8 13v-7.5a1.5 1.5 0 0 1 3 0v6.5"/>
+                            <path d="M11 5.5v7.5"/>
+                            <path d="M14 5.5a1.5 1.5 0 0 1 3 0v6.5a1.5 1.5 0 0 1 -3 0"/>
+                            <path d="M2 9h1l8 8 8 -8h1"/>
+                            <path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4"/>
+                            <path d="M10 19h4"/>
+                        </svg>
+                    </div>
+                </div>
+                <h1 class="error-title">უფს! გვერდი ვერ მოიძებნა</h1>
+                <p class="error-subtitle">
+                    მოთხოვნილი გვერდი არ არსებობს ან გადატანილია სხვა მისამართზე. გთხოვთ შეამოწმოთ URL-ის სისწორე.
+                </p>
+                
+                <div class="error-info-card card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="me-3">
+                                <span class="avatar bg-warning-lt">
+                                    <i class="ti ti-alert-triangle"></i>
+                                </span>
+                            </div>
+                            <div>
+                                <h5 class="mb-2">{% translate "What happened?" %}</h5>
+                                <ul class="list-unstyled text-muted mb-0">
+                                    <li class="mb-2">
+                                        <i class="ti ti-point me-2 text-warning"></i>
+                                        {% translate "The URL may have been typed incorrectly" %}
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="ti ti-point me-2 text-warning"></i>
+                                        {% translate "The page may have been moved or deleted" %}
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="ti ti-point me-2 text-warning"></i>
+                                        {% translate "The link you followed may be outdated" %}
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info d-flex align-items-center mb-0">
+                            <i class="ti ti-info-circle me-2"></i>
+                            <div>
+                                <strong>{% translate "Requested URL:" %}</strong>
+                                <code class="ms-2">{{ request.path|escape }}</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="empty-action">
+                    <div class="btn-list">
+                        <a href="{% url 'core:dashboard' %}" class="btn btn-primary">
+                            <i class="ti ti-home me-2"></i>
+                            {% translate "Go to Dashboard" %}
+                        </a>
+                        <button class="btn btn-outline-secondary" onclick="history.back()">
+                            <i class="ti ti-arrow-left me-2"></i>
+                            {% translate "Go Back" %}
+                        </button>
+                        {% if user.is_authenticated %}
+                            {% if user.is_staff %}
+                                <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-outline-primary">
+                                    <i class="ti ti-list-check me-2"></i>
+                                    {% translate "Manage Requests" %}
+                                </a>
+                            {% else %}
+                                <a href="{% url 'requests_app:user_request_list' %}" class="btn btn-outline-primary">
+                                    <i class="ti ti-user me-2"></i>
+                                    {% translate "My Requests" %}
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Quick Navigation for Authenticated Users -->
+                {% if user.is_authenticated %}
+                <div class="error-quick-nav card mt-4">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="ti ti-compass me-2"></i>
+                            {% translate "Quick Navigation" %}
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-6 col-md-3">
+                                <a href="{% url 'inventory:equipment_list' %}" class="error-nav-btn btn btn-outline-primary w-100">
+                                    <i class="ti ti-device-desktop mb-1"></i>
+                                    <br><small>{% translate "Equipment" %}</small>
+                                </a>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <a href="{% url 'warehouse:stockitem_list' %}" class="error-nav-btn btn btn-outline-success w-100">
+                                    <i class="ti ti-packages mb-1"></i>
+                                    <br><small>{% translate "Stock Items" %}</small>
+                                </a>
+                            </div>
+                            {% if user.is_staff %}
+                            <div class="col-6 col-md-3">
+                                <a href="{% url 'requests_app:admin_request_list' %}" class="error-nav-btn btn btn-outline-info w-100">
+                                    <i class="ti ti-clipboard-list mb-1"></i>
+                                    <br><small>{% translate "All Requests" %}</small>
+                                </a>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <a href="{% url 'admin:index' %}" class="error-nav-btn btn btn-outline-secondary w-100">
+                                    <i class="ti ti-settings mb-1"></i>
+                                    <br><small>{% translate "Admin Panel" %}</small>
+                                </a>
+                            </div>
+                            {% else %}
+                            <div class="col-6 col-md-3">
+                                <a href="{% url 'requests_app:request_create' %}" class="error-nav-btn btn btn-outline-info w-100">
+                                    <i class="ti ti-plus mb-1"></i>
+                                    <br><small>{% translate "New Request" %}</small>
+                                </a>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <a href="{% url 'requests_app:user_request_list' %}" class="error-nav-btn btn btn-outline-secondary w-100">
+                                    <i class="ti ti-user mb-1"></i>
+                                    <br><small>{% translate "My Requests" %}</small>
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    </div>
+    
+    <!-- Debug Information for Administrators -->
+    {% if debug and user.is_superuser %}
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-10 col-lg-8">
+            <div class="alert alert-info">
+                <div class="d-flex align-items-start">
+                    <i class="ti ti-bug me-3 mt-1"></i>
+                    <div>
+                        <h5 class="alert-title">{% translate "Debug Information" %}</h5>
+                        <div class="text-muted small">
+                            <strong>{% translate "User:" %}</strong> {{ request.user.username|default:"Anonymous" }}<br>
+                            <strong>{% translate "Full Path:" %}</strong> {{ request.get_full_path|escape }}<br>
+                            <strong>{% translate "Method:" %}</strong> {{ request.method }}<br>
+                            <strong>{% translate "Server Time:" %}</strong> {% now "Y-m-d H:i:s" %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}

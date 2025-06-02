@@ -6,7 +6,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('accounts/', include('django.contrib.auth.urls')), # Using custom core views for auth
+    path('accounts/', include('django.contrib.auth.urls')), # Added Django's built-in auth URLs
 
     # App URLs
     path('', include('core.urls')), # Handles root path, login, logout, register, dashboard

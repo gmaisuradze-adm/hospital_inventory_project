@@ -2,18 +2,12 @@
 
 {% block title %}{{ page_title|default:"წაშლის დადასტურება" }}{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">დეშბორდი</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'inventory:equipment_list' %}">ინვენტარი</a></li>
-            <li class="breadcrumb-item"><a href="{{ equipment.get_absolute_url }}">{{ equipment.name|truncatewords:5 }}</a></li>
-            <li class="breadcrumb-item active" aria-current="page">წაშლის დადასტურება</li>
-        </ol>
-    </nav>
+{% block page_header_title %}{% endblock page_header_title %}
 
-    <h2>{{ page_title }}</h2>
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<div class="container-xl">
     <hr>
 
     <div class="alert alert-danger" role="alert">

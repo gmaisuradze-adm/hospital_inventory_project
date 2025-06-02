@@ -11,9 +11,8 @@
 
 {# Add "Add New Request" button to the page_actions block in base.html's header #}
 {% block page_action_buttons %}
-    {% if perms.requests_app.add_request %}
-        <a href="{% url 'requests_app:request_create' %}" class="btn btn-primary">
-            <i class="ti ti-plus me-1"></i>
+    {% if perms.requests_app.add_request %}        <a href="{% url 'requests_app:request_create' %}" class="btn btn-primary">
+            <i class="ti ti-plus"></i>
             {% trans "Add New Request" %}
         </a>
     {% endif %}
@@ -59,16 +58,15 @@
                     {% endfor %}
                      <option value="unassigned" {% if current_assigned_to == "unassigned" %}selected{% endif %}>{% trans "Unassigned" %}</option>
                 </select>
-            </div>
-            <div class="col-md-auto">
+            </div>            <div class="col-md-auto">
                 <button type="submit" class="btn btn-success w-100">
-                    <i class="ti ti-filter me-1"></i> {% trans "Filter" %}
+                    <i class="ti ti-filter"></i> {% trans "Filter" %}
                 </button>
             </div>
              {% if current_q or current_status or current_type or current_assigned_to %}
             <div class="col-md-auto">
-                 <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-outline-secondary w-100">
-                    <i class="ti ti-clear-all me-1"></i> {% trans "Clear" %}
+                 <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-secondary w-100">
+                    <i class="ti ti-clear-all"></i> {% trans "Clear" %}
                  </a>
             </div>
             {% endif %}
@@ -114,14 +112,13 @@
                                 {% else %}
                                     {% trans "Unassigned" %}
                                 {% endif %}
-                            </td>
-                            <td>
+                            </td>                            <td>
                                 <div class="btn-list flex-nowrap">
-                                    <a href="{{ request_obj.get_absolute_url }}" class="btn btn-sm btn-outline-primary" title="{% trans "View Details" %}">
+                                    <a href="{{ request_obj.get_absolute_url }}" class="btn btn-primary" title="{% trans "View Details" %}">
                                         <i class="ti ti-eye"></i>
                                     </a>
                                     {% if user.is_staff and request_obj.can_be_edited_by_staff %}
-                                    <a href="{% url 'requests_app:request_edit' pk=request_obj.pk %}" class="btn btn-sm btn-outline-secondary" title="{% trans "Edit Request" %}">
+                                    <a href="{% url 'requests_app:request_edit' pk=request_obj.pk %}" class="btn btn-secondary" title="{% trans "Edit Request" %}">
                                         <i class="ti ti-edit"></i>
                                     </a>
                                     {% endif %}
@@ -205,10 +202,9 @@
                 </p>
             {% endif %}
             {% if perms.requests_app.add_request %}
-                {% if not current_q and not current_status and not current_type and not current_assigned_to %}
-                <div class="empty-action">
+                {% if not current_q and not current_status and not current_type and not current_assigned_to %}                <div class="empty-action">
                     <a href="{% url 'requests_app:request_create' %}" class="btn btn-primary">
-                        <i class="ti ti-plus me-1"></i>
+                        <i class="ti ti-plus"></i>
                         {% trans "Add New Request" %}
                     </a>
                 </div>

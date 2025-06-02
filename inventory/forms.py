@@ -1,12 +1,7 @@
-# inventory/forms.py
-
 from django import forms
-from .models import Equipment, Category, Status, Location, Supplier # Ensure Status is imported
+from .models import Equipment, Category, Status, Location, Supplier, DecommissionLog
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-# from django.contrib.auth import get_user_model # For assigned_to if it's settings.AUTH_USER_MODEL
-# User = get_user_model()
-
 
 class BootstrapFormMixin:
     def __init__(self, *args, **kwargs):
@@ -18,26 +13,29 @@ class BootstrapFormMixin:
             if isinstance(field.widget, forms.CheckboxInput):
                 new_classes.append('form-check-input')
             elif isinstance(field.widget, forms.RadioSelect):
-                # For Bootstrap 5, proper styling needs template changes or a custom widget.
+                # For RadioSelect, Bootstrap classes are usually applied to individual inputs
+                # or handled by a custom widget/renderer.
+                # We'll skip adding a generic class to the main widget here.
                 pass
             elif isinstance(field.widget, forms.Select):
                 new_classes.append('form-select')
             elif isinstance(field.widget, forms.ClearableFileInput):
-                new_classes.append('form-control')
+                new_classes.append('form-control') # Bootstrap 5 uses form-control for file inputs
             elif isinstance(field.widget, forms.Textarea):
                 new_classes.append('form-control')
                 if 'rows' not in field.widget.attrs:
                     field.widget.attrs['rows'] = 3
             elif not isinstance(field.widget, (forms.SelectMultiple, forms.CheckboxSelectMultiple)):
+                # Apply form-control to most other input types
                 new_classes.append('form-control')
             
             field.widget.attrs['class'] = f'{current_class} {" ".join(new_classes)}'.strip()
             
+            # Ensure DateInput uses type="date" and has form-control
             if isinstance(field.widget, forms.DateInput):
                 if 'form-control' not in field.widget.attrs.get('class', ''):
                     field.widget.attrs['class'] = f"{field.widget.attrs.get('class', '')} form-control".strip()
-                # Ensure type="date" is set for DateInput widgets if not already specified
-                if field.widget.input_type != 'date': # Check current input_type
+                if field.widget.input_type != 'date': # Check if it's not already date type
                     field.widget.input_type = 'date'
 
 
@@ -46,32 +44,33 @@ class CategoryForm(BootstrapFormMixin, forms.ModelForm):
         model = Category
         fields = ['name', 'description', 'icon']
         labels = {
-            'name': _("კატეგორიის სახელი"),
-            'description': _("აღწერა"),
-            'icon': _("ხატულას კლასი (Font Awesome)"),
+            'name': _("Category Name"),
+            'description': _("Description"),
+            'icon': _("Icon Class (Font Awesome)"),
         }
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 3, 'placeholder': _("მაგ., ლეპტოპები, პრინტერები...")}),
-            'icon': forms.TextInput(attrs={'placeholder': _("მაგ., fas fa-laptop")}),
+            'description': forms.Textarea(attrs={'rows': 3, 'placeholder': _("e.g., Laptops, Printers...")}),
+            'icon': forms.TextInput(attrs={'placeholder': _("e.g., fas fa-laptop")}),
         }
         help_texts = {
-            'icon': _("მოძებნეთ ხატულები <a href='https://fontawesome.com/search?m=free' target='_blank'>fontawesome.com</a> (გამოიყენეთ უფასო ხატულები).")
+            'icon': _("Find icons at <a href='https://fontawesome.com/search?m=free' target='_blank'>fontawesome.com</a> (use free icons).")
         }
 
 
 class StatusForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Status
-        fields = ['name', 'description', 'is_active_for_use', 'is_decommissioned', 'is_in_storage']
+        fields = ['name', 'description', 'is_active_for_use', 'is_decommissioned', 'is_in_storage', 'is_marked_for_write_off']
         labels = {
-            'name': _("სტატუსის სახელი"),
-            'description': _("აღწერა"),
-            'is_active_for_use': _("აქტიურია გამოყენებისთვის"),
-            'is_decommissioned': _("ჩამოწერილია"),
-            'is_in_storage': _("საწყობშია (ხელმისაწვდომია გასაცემად)"),
+            'name': _("Status Name"),
+            'description': _("Description"),
+            'is_active_for_use': _("Active for use"),
+            'is_decommissioned': _("Is Decommissioned"),
+            'is_in_storage': _("In storage (available for assignment)"),
+            'is_marked_for_write_off': _("Is Marked for Write-Off"),
         }
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 3, 'placeholder': _("მაგ., მოწყობილობა გამართულად მუშაობს...")}),
+            'description': forms.Textarea(attrs={'rows': 3, 'placeholder': _("e.g., Equipment is in good working order...")}),
         }
 
 class LocationForm(BootstrapFormMixin, forms.ModelForm):
@@ -79,24 +78,23 @@ class LocationForm(BootstrapFormMixin, forms.ModelForm):
         model = Location
         fields = ['name', 'parent_location', 'address', 'notes']
         labels = {
-            'name': _("ლოკაციის/დეპარტამენტის სახელი"),
-            'parent_location': _("მშობელი ლოკაცია (არასავალდებულო)"),
-            'address': _("მისამართი (არასავალდებულო)"),
-            'notes': _("შენიშვნები (არასავალდებულო)"),
+            'name': _("Location/Department Name"),
+            'parent_location': _("Parent Location (Optional)"),
+            'address': _("Address (Optional)"),
+            'notes': _("Notes (Optional)"),
         }
         widgets = {
-            'address': forms.Textarea(attrs={'rows': 2, 'placeholder': _("მაგ., ქ. თბილისი, ჭავჭავაძის გამზ. 1")}),
+            'address': forms.Textarea(attrs={'rows': 2, 'placeholder': _("e.g., Tbilisi, Chavchavadze Ave. 1")}),
             'notes': forms.Textarea(attrs={'rows': 3}),
-            'name': forms.TextInput(attrs={'placeholder': _("მაგ., მთავარი შენობა, IT განყოფილება, ოთახი 301")}),
+            'name': forms.TextInput(attrs={'placeholder': _("e.g., Main Building, IT Department, Room 301")}),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if 'parent_location' in self.fields:
-            # Ensure instance exists and has a pk before excluding
             instance_pk = self.instance.pk if self.instance and self.instance.pk else None
             self.fields['parent_location'].queryset = Location.objects.exclude(pk=instance_pk).order_by('name')
-            self.fields['parent_location'].empty_label = _("--------- (მშობელი არ არის არჩეული) ---------")
+            self.fields['parent_location'].empty_label = _("--------- (No parent selected) ---------")
 
 
 class SupplierForm(BootstrapFormMixin, forms.ModelForm):
@@ -104,95 +102,87 @@ class SupplierForm(BootstrapFormMixin, forms.ModelForm):
         model = Supplier
         fields = ['name', 'contact_person', 'phone_number', 'email', 'website', 'notes']
         labels = {
-            'name': _("მომწოდებლის სახელი"),
-            'contact_person': _("საკონტაქტო პირი"),
-            'phone_number': _("ტელეფონის ნომერი"),
-            'email': _("ელ. ფოსტა"),
-            'website': _("ვებ-გვერდი"),
-            'notes': _("შენიშვნები"),
+            'name': _("Supplier Name"),
+            'contact_person': _("Contact Person"),
+            'phone_number': _("Phone Number"),
+            'email': _("Email Address"),
+            'website': _("Website URL"),
+            'notes': _("Notes"),
         }
         widgets = {
             'notes': forms.Textarea(attrs={'rows': 3}),
             'email': forms.EmailInput(attrs={'placeholder': _("example@domain.com")}),
             'website': forms.URLInput(attrs={'placeholder': _("https://example.com")}),
-            'name': forms.TextInput(attrs={'placeholder': _("მაგ., შპს \"ტექნოსერვისი\"")}),
-            'contact_person': forms.TextInput(attrs={'placeholder': _("მაგ., გიორგი გიორგაძე")}),
+            'name': forms.TextInput(attrs={'placeholder': _("e.g., TechService Ltd.")}),
+            'contact_person': forms.TextInput(attrs={'placeholder': _("e.g., Giorgi Giorgadze")}),
             'phone_number': forms.TextInput(attrs={'placeholder': _("+995 555 123456")}),
         }
 
 class EquipmentForm(BootstrapFormMixin, forms.ModelForm):
-    date_added_display = forms.CharField(label=_("დამატების თარიღი"), required=False, disabled=True)
-    added_by_display = forms.CharField(label=_("დამამატებელი"), required=False, disabled=True)
-    last_updated_display = forms.CharField(label=_("ბოლო განახლება"), required=False, disabled=True)
-    updated_by_display = forms.CharField(label=_("ბოლოს განაახლა"), required=False, disabled=True)
-    # asset_tag_display - ახალი ველი, რომელიც გამოჩნდება რედაქტირებისას (თუ გსურთ)
-    asset_tag_display = forms.CharField(label=_("საინვენტარო ნომერი (შიდა ID)"), required=False, disabled=True)
-
+    date_added_display = forms.CharField(label=_("Date Added"), required=False, disabled=True)
+    added_by_display = forms.CharField(label=_("Added By"), required=False, disabled=True)
+    last_updated_display = forms.CharField(label=_("Last Updated"), required=False, disabled=True)
+    updated_by_display = forms.CharField(label=_("Last Updated By"), required=False, disabled=True)
+    asset_tag_display = forms.CharField(label=_("Asset Tag (Internal ID)"), required=False, disabled=True)
 
     class Meta:
         model = Equipment
         fields = [
-            'name', 'serial_number', # 'asset_tag' ამოღებულია აქედან
+            'name', 'serial_number', 
             'category', 'status', 
             'current_location', 'assigned_to',
             'supplier', 'purchase_date', 'purchase_cost', 'warranty_expiry_date',
             'notes',
-            # Display fields for read-only info
-            'asset_tag_display', # დავამატოთ asset_tag_display თუ გვინდა მისი ჩვენება რედაქტირებისას
+            # Display only fields (non-editable, shown on update form)
+            'asset_tag_display', 
             'date_added_display', 'added_by_display', 'last_updated_display', 'updated_by_display'
         ]
         labels = {
-            'name': _("მოწყობილობის სახელი/მოდელი"),
-            # 'asset_tag': _("საინვენტარო ნომერი (შიდა ID)"), # ეს ლეიბლი ახლა asset_tag_display-სთვის იქნება, თუ მას დაამატებთ
-            'serial_number': _("სერიული ნომერი (არასავალდებულო)"),
-            'category': _("კატეგორია"),
-            'status': _("სტატუსი"),
-            'current_location': _("მიმდინარე ლოკაცია (არასავალდებულო)"),
-            'assigned_to': _("მინიჭებული მომხმარებელი (არასავალდებულო)"),
-            'supplier': _("მომწოდებელი (არასავალდებულო)"),
-            'purchase_date': _("შეძენის თარიღი (არასავალდებულო)"),
-            'purchase_cost': _("შეძენის ღირებულება (₾) (არასავალდებულო)"),
-            'warranty_expiry_date': _("გარანტიის ვადა (არასავალდებულო)"),
-            'notes': _("შენიშვნები (არასავალდებულო)"),
+            'name': _("Equipment Name/Model"),
+            'serial_number': _("Serial Number (Optional)"),
+            'category': _("Category"),
+            'status': _("Status"),
+            'current_location': _("Current Location (Optional)"),
+            'assigned_to': _("Assigned To (User) (Optional)"),
+            'supplier': _("Supplier (Optional)"),
+            'purchase_date': _("Purchase Date (Optional)"),
+            'purchase_cost': _("Purchase Cost (GEL) (Optional)"),
+            'warranty_expiry_date': _("Warranty Expiry Date (Optional)"),
+            'notes': _("Notes (Optional)"),
         }
         widgets = {
-            'purchase_date': forms.DateInput(attrs={'type': 'date'}),
-            'warranty_expiry_date': forms.DateInput(attrs={'type': 'date'}),
-            'notes': forms.Textarea(attrs={'rows': 4, 'placeholder': _("დამატებითი ინფორმაცია მოწყობილობაზე...")}),
-            'purchase_cost': forms.NumberInput(attrs={'placeholder': _("მაგ., 1500.00")}),
-            'name': forms.TextInput(attrs={'placeholder': _("მაგ., ლეპტოპი Dell XPS 13")}),
-            # 'asset_tag': forms.TextInput(attrs={'placeholder': _("უნიკალური შიდა საინვენტარო ნომერი")}), # ეს ვიჯეტიც აღარ არის საჭირო
-            'serial_number': forms.TextInput(attrs={'placeholder': _("მწარმოებლის სერიული ნომერი")}),
+            'purchase_date': forms.DateInput(), # BootstrapFormMixin will handle type='date'
+            'warranty_expiry_date': forms.DateInput(), # BootstrapFormMixin will handle type='date'
+            'notes': forms.Textarea(attrs={'rows': 4, 'placeholder': _("Additional information about the equipment...")}),
+            'purchase_cost': forms.NumberInput(attrs={'placeholder': _("e.g., 1500.00")}),
+            'name': forms.TextInput(attrs={'placeholder': _("e.g., Laptop Dell XPS 13")}),
+            'serial_number': forms.TextInput(attrs={'placeholder': _("Manufacturer's serial number")}),
         }
         help_texts = {
-            # 'asset_tag': _("უნდა იყოს უნიკალური სისტემაში."), # ეს help_text-იც აღარ არის საჭირო
-            'serial_number': _("თუ არსებობს, შეიყვანეთ."),
-            'purchase_cost': _("შეიყვანეთ მხოლოდ ციფრები."),
-            'status': _("აირჩიეთ მოწყობილობის მიმდინარე მდგომარეობა."),
-            'notes': _("აქ შეგიძლიათ შეიყვანოთ ზოგადი შენიშვნები."),
+            'serial_number': _("Enter if available."),
+            'purchase_cost': _("Enter numbers only."),
+            'status': _("Select the current condition of the equipment."),
+            'notes': _("General notes can be entered here."),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
         is_new_instance = not self.instance or not self.instance.pk
-        # ამოვიღოთ _display ველები model_bound_fields-დან
-        display_fields_to_remove_on_create = ['asset_tag_display', 'date_added_display', 'added_by_display', 'last_updated_display', 'updated_by_display']
+        display_fields_to_remove_on_create = [
+            'asset_tag_display', 'date_added_display', 'added_by_display', 
+            'last_updated_display', 'updated_by_display'
+        ]
 
         if is_new_instance:
             if 'purchase_date' in self.fields:
                  self.fields['purchase_date'].initial = timezone.now().date()
             for field_name in display_fields_to_remove_on_create:
-                if field_name in self.fields: # შევამოწმოთ, რომ ველი არსებობს სანამ წავშლით
+                if field_name in self.fields:
                     self.fields.pop(field_name)
-        else: # რედაქტირების რეჟიმი
-            if 'asset_tag_display' in self.fields and self.instance and self.instance.asset_tag:
-                self.fields['asset_tag_display'].initial = self.instance.asset_tag
-            else: # თუ asset_tag_display არ არის ფორმის ველებში (მაგ. ახალზე წაიშალა), ან asset_tag არ არსებობს
-                if 'asset_tag_display' in self.fields: # თუ რედაქტირებისას ველი არსებობს, მაგრამ asset_tag ცარიელია
-                    self.fields['asset_tag_display'].initial = _("ჯერ არ არის გენერირებული")
-
-
+        else: 
+            if 'asset_tag_display' in self.fields:
+                self.fields['asset_tag_display'].initial = self.instance.asset_tag if self.instance.asset_tag else _("Not yet generated")
             if 'date_added_display' in self.fields:
                 self.fields['date_added_display'].initial = self.instance.date_added.strftime("%Y-%m-%d %H:%M") if self.instance.date_added else "-"
             if 'added_by_display' in self.fields:
@@ -202,47 +192,151 @@ class EquipmentForm(BootstrapFormMixin, forms.ModelForm):
             if 'updated_by_display' in self.fields:
                 self.fields['updated_by_display'].initial = str(self.instance.updated_by) if self.instance.updated_by else "-"
 
-        # ველების required სტატუსის დაყენება მოდელის blank ატრიბუტის მიხედვით
-        # ამჯერად, ჩვენ ვივლით ფორმის ველებზე და არა Meta.fields-ზე, რადგან Meta.fields შეიცვალა
+        # Set fields to not required if model field has blank=True and no default
         for field_name, field_obj in self.fields.items():
-            if not field_name.endswith('_display'): # გამოვრიცხოთ ჩვენი display ველები
+            if not field_name.endswith('_display'): # Skip our custom display fields
                 try:
                     model_field = self.Meta.model._meta.get_field(field_name)
-                    if model_field.blank and not model_field.has_default(): # თუ მოდელში blank=True და არ აქვს default
+                    if model_field.blank and not model_field.has_default(): # Check if blank is True and no default
                         field_obj.required = False
-                except Exception: # forms.models.FieldDoesNotExist ან AttributeError
+                except Exception: # FieldDoesNotExist, etc.
                     pass 
         
-        fk_fields_with_empty_label = ['category', 'status', 'current_location', 'supplier', 'assigned_to']
+        # Set empty_label for ForeignKey fields
+        fk_fields_with_empty_label = ['category', 'current_location', 'supplier', 'assigned_to']
         for fk_field_name in fk_fields_with_empty_label:
             if fk_field_name in self.fields and isinstance(self.fields[fk_field_name], forms.ModelChoiceField):
-                if not self.fields[fk_field_name].required:
-                    self.fields[fk_field_name].empty_label = _("--------- (არ არის არჩეული) ---------")
-                else:
-                    self.fields[fk_field_name].empty_label = _("აირჩიეთ...") 
+                if not self.fields[fk_field_name].required: # If field is not required, allow empty label
+                    self.fields[fk_field_name].empty_label = _("--------- (Not selected) ---------")
+                # If required, Django's default behavior (no empty label or a first empty choice) is usually fine.
         
+        # Special handling for the status field queryset in edit mode
         if 'status' in self.fields and isinstance(self.fields['status'], forms.ModelChoiceField):
-            if self.fields['status'].required:
-                 self.fields['status'].empty_label = _("აირჩიეთ სტატუსი...")
-            # რედაქტირებისას, თუ მიმდინარე სტატუსი is_decommissioned=True, ის მაინც უნდა გამოჩნდეს სიაში
-            current_status_pk = self.instance.status_id if self.instance and self.instance.status_id else None
-            status_queryset = Status.objects.filter(is_decommissioned=False)
-            if current_status_pk:
-                current_status_obj = Status.objects.filter(pk=current_status_pk).first()
-                if current_status_obj and current_status_obj.is_decommissioned:
-                    status_queryset = status_queryset | Status.objects.filter(pk=current_status_pk)
+            if self.fields['status'].required: # Status is mandatory
+                 self.fields['status'].empty_label = _("Select a status...")
             
-            self.fields['status'].queryset = status_queryset.order_by('name')
+            current_status = self.instance.status if self.instance and self.instance.pk else None
+            
+            # Start with all statuses
+            status_queryset = Status.objects.all()
+            
+            # If not editing a decommissioned item, exclude decommissioned statuses
+            if not (current_status and current_status.is_decommissioned):
+                status_queryset = status_queryset.filter(is_decommissioned=False)
+            
+            # If not editing an item marked for write-off, exclude marked_for_write_off statuses
+            if not (current_status and current_status.is_marked_for_write_off):
+                 status_queryset = status_queryset.exclude(is_marked_for_write_off=True)
+
+            # Always include the current status in the queryset if it exists
+            if current_status:
+                status_queryset = status_queryset | Status.objects.filter(pk=current_status.pk)
+
+            self.fields['status'].queryset = status_queryset.distinct().order_by('name')
 
 
-class EquipmentMarkForWriteOffForm(BootstrapFormMixin, forms.ModelForm):
+class EquipmentMarkForWriteOffForm(BootstrapFormMixin, forms.Form):
     write_off_reason = forms.CharField(
-        label=_("ჩამოწერის მიზეზი"),
-        widget=forms.Textarea(attrs={'rows': 4, 'placeholder': _("მოკლედ აღწერეთ დაზიანების ან ჩამოწერის მიზეზი...")}),
+        label=_("Reason for Marking for Write-Off"),
+        widget=forms.Textarea(attrs={'rows': 4, 'placeholder': _("Briefly describe the damage or reason for write-off...")}),
         required=True,
-        help_text=_("ეს ინფორმაცია შეინახება მოწყობილობის შენიშვნებში, არსებულის დამატებით.")
+        help_text=_("This information will be appended to the equipment's notes.")
     )
 
+class DecommissionConfirmForm(BootstrapFormMixin, forms.ModelForm):
+    decommission_date = forms.DateField(
+        label=_("Decommission Date"),
+        widget=forms.DateInput(), # BootstrapFormMixin handles type='date'
+        required=True,
+        initial=timezone.now().date
+    )
+    confirm_decommission = forms.BooleanField(
+        label=_("I confirm the final decommissioning of this equipment."),
+        required=True,
+        # BootstrapFormMixin handles 'form-check-input'
+    )
     class Meta:
-        model = Equipment
-        fields = ['write_off_reason'] # მხოლოდ ეს ველი გვჭირდება ამ ფორმისთვის
+        model = DecommissionLog
+        fields = [
+            'decommission_date', 'reason', 'method_of_disposal', 
+            'disposal_certificate_id', 'notes', 'confirm_decommission'
+        ]
+        labels = {
+            'reason': _("Final Reason for Decommissioning"),
+            'method_of_disposal': _("Method of Disposal"),
+            'disposal_certificate_id': _("Disposal Certificate/Act ID"),
+            'notes': _("Additional Notes on Decommissioning"),
+        }
+        widgets = {
+            'reason': forms.Textarea(attrs={'rows': 3, 'placeholder': _("Final reason (may be pre-filled from marking stage)")}),
+            'notes': forms.Textarea(attrs={'rows': 3, 'placeholder': _("Any other relevant details")}),
+            'method_of_disposal': forms.TextInput(attrs={'placeholder': _("e.g., Recycled, Sold, Scrapped")}),
+            'disposal_certificate_id': forms.TextInput(attrs={'placeholder': _("Certificate or act number, if any")}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.equipment_instance = kwargs.pop('equipment_instance', None) # Get equipment from view
+        super().__init__(*args, **kwargs)
+        
+        # Pre-fill 'reason' if equipment_instance has notes from marking stage
+        if self.equipment_instance and self.equipment_instance.notes:
+            if 'reason' in self.fields and not self.initial.get('reason'):
+                notes_content = self.equipment_instance.notes
+                # Attempt to find the last "Reason:" entry, supporting multiple languages
+                reason_keywords = { 
+                    'en': "Reason:", 
+                    'ka': "მიზეზი:"  # Assuming "მიზეზი:" is the Georgian translation
+                }
+                
+                last_reason_entry_pos = -1
+                found_keyword = ""
+
+                for lang_code, keyword in reason_keywords.items():
+                    current_pos = notes_content.rfind(keyword)
+                    if current_pos > last_reason_entry_pos:
+                        last_reason_entry_pos = current_pos
+                        found_keyword = keyword
+                
+                if last_reason_entry_pos != -1:
+                    start_index = last_reason_entry_pos + len(found_keyword)
+                    # Extract text until the next double newline or end of string
+                    end_index_double_newline = notes_content.find("\n\n", start_index)
+                    extracted_reason = ""
+                    if end_index_double_newline != -1:
+                        extracted_reason = notes_content[start_index:end_index_double_newline].strip()
+                    else:
+                        # If no double newline, try single newline
+                        end_index_single_newline = notes_content.find("\n", start_index)
+                        if end_index_single_newline != -1:
+                             extracted_reason = notes_content[start_index:end_index_single_newline].strip()
+                        else: # If no newline at all, take to the end
+                            extracted_reason = notes_content[start_index:].strip()
+                    
+                    if extracted_reason:
+                        self.fields['reason'].initial = extracted_reason
+
+
+class EquipmentRestoreForm(BootstrapFormMixin, forms.Form):
+    restoration_reason = forms.CharField(
+        label=_("Reason for Restoration"),
+        widget=forms.Textarea(attrs={'rows': 3, 'placeholder': _("Explain why this equipment is being restored...")}),
+        required=True
+    )
+    new_status = forms.ModelChoiceField(
+        label=_("New Status After Restoration"),
+        queryset=Status.objects.filter(is_decommissioned=False, is_marked_for_write_off=False).order_by('name'),
+        required=True,
+        empty_label=None, # Required, so no empty option
+        # BootstrapFormMixin will add 'form-select'
+    )
+
+    def __init__(self, *args, **kwargs):
+        # Pop equipment_instance before calling super if it's passed, though not used in this form currently.
+        kwargs.pop('equipment_instance', None) 
+        super().__init__(*args, **kwargs)
+        if 'new_status' in self.fields:
+            # The default __str__ method of Status model (which returns self.name) is usually sufficient.
+            # self.fields['new_status'].label_from_instance = lambda obj: f"{obj.name}"
+            # This line is not strictly necessary if Status.__str__ returns the name.
+            # If you want to customize the display further, you can uncomment and modify it.
+            pass

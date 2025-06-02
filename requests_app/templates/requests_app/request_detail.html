@@ -21,33 +21,28 @@
 {% block page_action_buttons %}
     {% if request_obj %}
         {% if user == request_obj.requested_by %}
-            {% if request_obj.status == request_obj.STATUS_RESOLVED_AWAITING_CONFIRMATION %}
-                <a href="{% url 'requests_app:request_close_by_user' pk=request_obj.pk %}" class="btn btn-success me-2">
-                    <i class="ti ti-check me-1"></i>{% trans "დადასტურება და დახურვა" %}
+            {% if request_obj.status == request_obj.STATUS_RESOLVED_AWAITING_CONFIRMATION %}                <a href="{% url 'requests_app:request_close_by_user' pk=request_obj.pk %}" class="btn btn-success me-2" title="{% trans 'დადასტურება და დახურვა' %}">
+                    <i class="ti ti-check"></i>
                 </a>
-                <a href="{% url 'requests_app:request_reopen_by_user' pk=request_obj.pk %}" class="btn btn-warning me-2">
-                    <i class="ti ti-refresh-alert me-1"></i>{% trans "ხელახლა გახსნა (არ ვეთანხმები)" %}
+                <a href="{% url 'requests_app:request_reopen_by_user' pk=request_obj.pk %}" class="btn btn-warning me-2" title="{% trans 'ხელახლა გახსნა (არ ვეთანხმები)' %}">
+                    <i class="ti ti-refresh-alert"></i>
                 </a>
-            {% elif request_obj.status == request_obj.STATUS_CLOSED_CONFIRMED or request_obj.status == request_obj.STATUS_CLOSED_AUTO %}
-                 <a href="{% url 'requests_app:request_reopen_by_user' pk=request_obj.pk %}" class="btn btn-warning me-2">
-                    <i class="ti ti-refresh me-1"></i>{% trans "ხელახლა გახსნა" %}
+            {% elif request_obj.status == request_obj.STATUS_CLOSED_CONFIRMED or request_obj.status == request_obj.STATUS_CLOSED_AUTO %}                 <a href="{% url 'requests_app:request_reopen_by_user' pk=request_obj.pk %}" class="btn btn-warning me-2" title="{% trans 'ხელახლა გახსნა' %}">
+                    <i class="ti ti-refresh"></i>
                 </a>
             {% endif %}
         {% endif %}
 
-        {% if user.is_staff and request_obj.can_be_edited_by_staff %} 
-            <a href="{% url 'requests_app:request_edit' pk=request_obj.pk %}" class="btn btn-outline-secondary me-2">
-                <i class="ti ti-edit me-1"></i>{% trans "მოთხოვნის რედაქტირება" %}
+        {% if user.is_staff and request_obj.can_be_edited_by_staff %}            <a href="{% url 'requests_app:request_edit' pk=request_obj.pk %}" class="btn btn-secondary me-2" title="{% trans 'მოთხოვნის რედაქტირება' %}">
+                <i class="ti ti-edit"></i>
             </a>
-        {% endif %}
-
-        {% if user.is_staff %}
-            <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-primary">
-                <i class="ti ti-arrow-left me-1"></i>{% trans "ადმინ. სიისკენ" %}
+        {% endif %}        {% if user.is_staff %}
+            <a href="{% url 'requests_app:admin_request_list' %}" class="btn btn-primary" title="{% trans 'ადმინ. სიისკენ' %}">
+                <i class="ti ti-arrow-left"></i>
             </a>
         {% else %}
-            <a href="{% url 'requests_app:user_request_list' %}" class="btn btn-primary">
-                <i class="ti ti-arrow-left me-1"></i>{% trans "ჩემი მოთხოვნებისკენ" %}
+            <a href="{% url 'requests_app:user_request_list' %}" class="btn btn-primary" title="{% trans 'ჩემი მოთხოვნებისკენ' %}">
+                <i class="ti ti-arrow-left"></i>
             </a>
         {% endif %}
     {% endif %}
@@ -55,168 +50,385 @@
 
 {% block content %}
 {% if request_obj %}
-    <div class="card shadow-sm mb-4">
-        <div class="card-body p-4">
-            <div class="row">
-                <div class="col-lg-8 mb-4 mb-lg-0">
-                    <dl class="row gy-3">
-                        <dt class="col-sm-4 col-md-3 text-muted">{% trans "ID" %}:</dt>
-                        <dd class="col-sm-8 col-md-9 fw-bold">#{{ request_obj.id }}</dd>
-
-                        <dt class="col-sm-4 col-md-3 text-muted">{% trans "საგანი" %}:</dt>
-                        <dd class="col-sm-8 col-md-9">{{ request_obj.subject|default:"-" }}</dd>
-
-                        <dt class="col-sm-4 col-md-3 text-muted">{% trans "სტატუსი" %}:</dt>
-                        <dd class="col-sm-8 col-md-9">
-                            <span class="badge {{ request_obj.get_status_badge_class }}">{{ request_obj.get_status_display }}</span>
-                        </dd>
-
-                        <dt class="col-sm-4 col-md-3 text-muted">{% trans "პრიორიტეტი" %}:</dt>
-                        <dd class="col-sm-8 col-md-9">
-                            <span class="badge {{ request_obj.get_priority_badge_class|default:'bg-secondary-lt' }}">
-                                {{ request_obj.get_priority_display|default:"-" }}
+    {# Header Card with Request Summary #}
+    <div class="card shadow-sm mb-4 border-start border-5 {% if request_obj.priority == 'critical' %}border-danger{% elif request_obj.priority == 'high' %}border-warning{% elif request_obj.priority == 'medium' %}border-info{% else %}border-success{% endif %}">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="d-flex align-items-center mb-2">
+                        <h3 class="card-title me-3 mb-0">{{ request_obj.subject|default:"Untitled Request" }}</h3>
+                        <span class="badge {{ request_obj.get_status_badge_class }} me-2">
+                            <i class="ti ti-clock me-1"></i>{{ request_obj.get_status_display }}
+                        </span>
+                        {% if request_obj.priority %}
+                            {% if request_obj.priority == 'critical' %}
+                                <span class="badge bg-danger">
+                                    <i class="ti ti-alert-octagon me-1"></i>{{ request_obj.get_priority_display }}
+                                </span>
+                            {% elif request_obj.priority == 'high' %}
+                                <span class="badge bg-warning">
+                                    <i class="ti ti-alert-triangle me-1"></i>{{ request_obj.get_priority_display }}
+                                </span>
+                            {% elif request_obj.priority == 'medium' %}
+                                <span class="badge bg-info">
+                                    <i class="ti ti-flame me-1"></i>{{ request_obj.get_priority_display }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success">
+                                    <i class="ti ti-arrow-down me-1"></i>{{ request_obj.get_priority_display }}
+                                </span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="row text-muted small">
+                        <div class="col-sm-6">
+                            <i class="ti ti-hash me-1"></i><strong>ID:</strong> #{{ request_obj.id }}
+                            {% if request_obj.request_type %}
+                                <span class="ms-3"><i class="ti ti-tag me-1"></i><strong>{% trans "Type" %}:</strong> {{ request_obj.request_type.name }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-6">
+                            <i class="ti ti-user me-1"></i><strong>{% trans "Requester" %}:</strong> {{ request_obj.requested_by.get_full_name|default:request_obj.requested_by.username }}
+                            <span class="ms-3"><i class="ti ti-calendar me-1"></i>{{ request_obj.created_at|date:"M j, Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    {% if request_obj.assigned_to %}
+                        <div class="text-center">
+                            <span class="avatar avatar-md rounded-circle bg-success-lt text-success mb-1">
+                                {{ request_obj.assigned_to.get_full_name|first|default:request_obj.assigned_to.username|first|upper }}
                             </span>
-                        </dd>
-
-                        {% if request_obj.request_type %}
-                        <dt class="col-sm-4 col-md-3 text-muted">{% trans "მოთხოვნის ტიპი" %}:</dt>
-                        <dd class="col-sm-8 col-md-9">{{ request_obj.request_type.name|default:"-" }}</dd>
-                        {% endif %}
-
-                        {% if request_obj.request_location %}
-                            <dt class="col-sm-4 col-md-3 text-muted">{% trans "დეპარტამენტი/ლოკაცია" %}:</dt>
-                            <dd class="col-sm-8 col-md-9">{{ request_obj.request_location.name|default:request_obj.request_location|default:"-" }}</dd>
-                        {% endif %}
-
-                        {% if request_obj.desired_completion_date %}
-                            <dt class="col-sm-4 col-md-3 text-muted">{% trans "სასურველი დასრულების თარიღი" %}:</dt>
-                            <dd class="col-sm-8 col-md-9">{{ request_obj.desired_completion_date|date:"Y-m-d" }}</dd>
-                        {% endif %}
-                    </dl>
-
-                    <div class="mt-4">
-                        <h5 class="mb-2">{% trans "აღწერა" %}:</h5>
-                        <div class="p-3 bg-light rounded border" style="white-space: pre-wrap;">
-                            {{ request_obj.description|default:_("აღწერა მითითებული არ არის.")|linebreaksbr }}
+                            <div class="small text-muted">{% trans "Assigned to" %}</div>
+                            <div class="fw-medium">{{ request_obj.assigned_to.get_full_name|default:request_obj.assigned_to.username }}</div>
                         </div>
-                    </div>
-
-                    {% if request_obj.resolution_notes %}
-                    <div class="mt-4">
-                        <h5 class="mb-2">{% trans "შესრულების/დახურვის შენიშვნა" %}:</h5>
-                        <div class="p-3 bg-azure-lt rounded border" style="white-space: pre-wrap;">
-                            {{ request_obj.resolution_notes|linebreaksbr }}
+                    {% else %}
+                        <div class="text-center">
+                            <span class="avatar avatar-md rounded-circle bg-danger-lt text-danger mb-1">
+                                <i class="ti ti-user-off"></i>
+                            </span>
+                            <div class="small text-danger">{% trans "Unassigned" %}</div>
                         </div>
-                    </div>
                     {% endif %}
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="col-lg-4">
-                    <div class="card mb-3 shadow-sm">
-                        <div class="card-header"><h3 class="card-title">{% trans "ავტორი & დროები" %}</h3></div>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "ავტორი" %}:</strong></span> <span>{{ request_obj.requested_by.get_full_name|default:request_obj.requested_by.username|default:"-" }}</span></li>
-                            <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "შექმნის დრო" %}:</strong></span> <span>{{ request_obj.created_at|date:"Y-m-d H:i" }}</span></li>
-                            {% if request_obj.date_assigned %}
-                            <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "მინიჭების თარიღი" %}:</strong></span> <span class="text-success">{{ request_obj.date_assigned|date:"Y-m-d H:i" }}</span></li>
-                            {% endif %}
-                            
-                            {% if request_obj.resolved_at and request_obj.status != request_obj.STATUS_REJECTED and request_obj.status != request_obj.STATUS_CANCELLED %}
-                                <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "ტექ. გადაწყვეტის თარიღი" %}:</strong></span> <span class="text-info">{{ request_obj.resolved_at|date:"Y-m-d H:i" }}</span></li>
-                            {% endif %}
-                            {% if request_obj.closed_at %}
-                                <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "დახურვის თარიღი" %}:</strong></span> <span class="text-success">{{ request_obj.closed_at|date:"Y-m-d H:i" }}</span></li>
-                            {% elif request_obj.status == request_obj.STATUS_REJECTED and request_obj.resolved_at %} {# resolved_at is used for rejection/cancellation date in model #}
-                                <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "უარყოფის თარიღი" %}:</strong></span> <span class="text-danger">{{ request_obj.resolved_at|date:"Y-m-d H:i" }}</span></li>
-                            {% elif request_obj.status == request_obj.STATUS_CANCELLED and request_obj.resolved_at %} {# resolved_at is used for rejection/cancellation date in model #}
-                                 <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "გაუქმების თარიღი" %}:</strong></span> <span class="text-warning">{{ request_obj.resolved_at|date:"Y-m-d H:i" }}</span></li>
-                            {% endif %}
-
-                            <li class="list-group-item d-flex justify-content-between"><span><strong>{% trans "ბოლო განახლება" %}:</strong></span> <span>{{ request_obj.updated_at|date:"Y-m-d H:i" }}</span></li>
-                        </ul>
-                    </div>
-                    <div class="card shadow-sm">
-                        <div class="card-header"><h3 class="card-title">{% trans "მინიჭება & ტექნიკა" %}</h3></div>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span><strong>{% trans "მინიჭებული" %}:</strong></span>
-                                {% if request_obj.assigned_to %}
-                                    <span>{{ request_obj.assigned_to.get_full_name|default:request_obj.assigned_to.username }}</span>
-                                {% else %}
-                                    <span class="text-muted">{% trans "მიუნიჭებელი" %}</span>
-                                {% endif %}
-                            </li>
-                            {% if request_obj.related_existing_equipment %}
-                            <li class="list-group-item">
-                                <strong>{% trans "დაკავშირებული ტექნიკა" %}:</strong>
-                                <a href="{% url 'inventory:equipment_detail' request_obj.related_existing_equipment.pk %}" class="d-block stretched-link">{{ request_obj.related_existing_equipment.name|default:"-" }}</a>
-                                <small class="d-block text-muted">({{ request_obj.related_existing_equipment.asset_tag|default:_("ინვენტარის № არაა") }})</small>
-                            </li>
-                            {% else %}
-                            <li class="list-group-item"><strong>{% trans "დაკავშირებული ტექნიკა" %}:</strong> <span class="text-muted">-</span></li>
-                            {% endif %}
-                        </ul>
+    <div class="row">
+        {# Main Content Column #}
+        <div class="col-lg-8">
+            {# Description Card #}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h4 class="card-title">
+                        <i class="ti ti-file-text me-2"></i>{% trans "Request Description" %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="request-description bg-azure-lt p-4 rounded">
+                        {{ request_obj.description|default:_("No description provided.")|linebreaksbr }}
                     </div>
                 </div>
             </div>
 
-            <div class="mt-4 pt-4 border-top">
-                <h4 class="mb-3">{% trans "განახლებების ისტორია" %}</h4>
+            {# Resolution Notes Card - Only show if exists #}
+            {% if request_obj.resolution_notes %}
+            <div class="card shadow-sm mb-4 border-start border-3 border-success">
+                <div class="card-header bg-success-lt">
+                    <h4 class="card-title text-success">
+                        <i class="ti ti-check-circle me-2"></i>{% trans "Resolution Notes" %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="resolution-notes bg-white p-4 rounded border">
+                        {{ request_obj.resolution_notes|linebreaksbr }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# Equipment Information Card - Only show if equipment exists #}
+            {% if request_obj.related_existing_equipment %}
+            <div class="card shadow-sm mb-4 border-start border-3 border-info">
+                <div class="card-header bg-info-lt">
+                    <h4 class="card-title text-info">
+                        <i class="ti ti-device-desktop me-2"></i>{% trans "Related Equipment" %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-lg bg-info-lt text-info me-3">
+                            <i class="ti ti-device-desktop"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">
+                                <a href="{% url 'inventory:equipment_detail' request_obj.related_existing_equipment.pk %}" class="text-decoration-none">
+                                    {{ request_obj.related_existing_equipment.name }}
+                                </a>
+                            </h5>
+                            <div class="text-muted">
+                                {% trans "Asset Tag" %}: {{ request_obj.related_existing_equipment.asset_tag|default:"N/A" }}
+                                {% if request_obj.related_existing_equipment.location %}
+                                    <span class="ms-3">{% trans "Location" %}: {{ request_obj.related_existing_equipment.location.name }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="ms-auto">
+                            <a href="{% url 'inventory:equipment_detail' request_obj.related_existing_equipment.pk %}" class="btn btn-info btn-sm">
+                                <i class="ti ti-external-link me-1"></i>{% trans "View Equipment" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        {# Sidebar Column #}
+        <div class="col-lg-4">
+            {# Quick Actions Card #}
+            {% if user.is_staff %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h4 class="card-title">
+                        <i class="ti ti-bolt me-2"></i>{% trans "Quick Actions" %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if request_obj.can_be_edited_by_staff %}
+                        <a href="{% url 'requests_app:request_edit' pk=request_obj.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="ti ti-edit me-1"></i>{% trans "Edit Request" %}
+                        </a>
+                        {% endif %}
+                        {% if request_obj.status != request_obj.STATUS_CLOSED_CONFIRMED %}
+                        <button class="btn btn-outline-success btn-sm" onclick="updateStatus('resolved')">
+                            <i class="ti ti-check me-1"></i>{% trans "Mark Resolved" %}
+                        </button>
+                        {% endif %}
+                        <button class="btn btn-outline-secondary btn-sm" onclick="reassignRequest()">
+                            <i class="ti ti-user-plus me-1"></i>{% trans "Reassign" %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# Timeline & Dates Card #}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h4 class="card-title">
+                        <i class="ti ti-clock-history me-2"></i>{% trans "Timeline & Details" %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="timeline timeline-sm">
+                        {# Created #}
+                        <div class="timeline-item">
+                            <div class="timeline-point bg-blue"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-time">{{ request_obj.created_at|date:"M j, Y H:i" }}</div>
+                                <div class="timeline-title">{% trans "Request Created" %}</div>
+                                <div class="timeline-subtitle text-muted">
+                                    {% trans "by" %} {{ request_obj.requested_by.get_full_name|default:request_obj.requested_by.username }}
+                                </div>
+                            </div>
+                        </div>
+
+                        {# Assigned #}
+                        {% if request_obj.date_assigned %}
+                        <div class="timeline-item">
+                            <div class="timeline-point bg-green"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-time">{{ request_obj.date_assigned|date:"M j, Y H:i" }}</div>
+                                <div class="timeline-title">{% trans "Request Assigned" %}</div>
+                                {% if request_obj.assigned_to %}
+                                <div class="timeline-subtitle text-muted">
+                                    {% trans "to" %} {{ request_obj.assigned_to.get_full_name|default:request_obj.assigned_to.username }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {# Resolution/Rejection/Cancellation #}
+                        {% if request_obj.resolved_at %}
+                            {% if request_obj.status == request_obj.STATUS_REJECTED %}
+                            <div class="timeline-item">
+                                <div class="timeline-point bg-red"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-time">{{ request_obj.resolved_at|date:"M j, Y H:i" }}</div>
+                                    <div class="timeline-title text-danger">{% trans "Request Rejected" %}</div>
+                                </div>
+                            </div>
+                            {% elif request_obj.status == request_obj.STATUS_CANCELLED %}
+                            <div class="timeline-item">
+                                <div class="timeline-point bg-orange"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-time">{{ request_obj.resolved_at|date:"M j, Y H:i" }}</div>
+                                    <div class="timeline-title text-warning">{% trans "Request Cancelled" %}</div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="timeline-item">
+                                <div class="timeline-point bg-cyan"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-time">{{ request_obj.resolved_at|date:"M j, Y H:i" }}</div>
+                                    <div class="timeline-title text-info">{% trans "Request Resolved" %}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endif %}
+
+                        {# Closed #}
+                        {% if request_obj.closed_at %}
+                        <div class="timeline-item">
+                            <div class="timeline-point bg-green"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-time">{{ request_obj.closed_at|date:"M j, Y H:i" }}</div>
+                                <div class="timeline-title text-success">{% trans "Request Closed" %}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {# Last Updated #}
+                        <div class="timeline-item">
+                            <div class="timeline-point bg-gray"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-time">{{ request_obj.updated_at|date:"M j, Y H:i" }}</div>
+                                <div class="timeline-title">{% trans "Last Updated" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Assignment Information Card #}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h4 class="card-title">
+                        <i class="ti ti-users me-2"></i>{% trans "Assignment Info" %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center mb-3">
+                        <div class="col-auto">
+                            {% if request_obj.assigned_to %}
+                                <span class="avatar bg-success-lt text-success">
+                                    {{ request_obj.assigned_to.get_full_name|first|default:request_obj.assigned_to.username|first|upper }}
+                                </span>
+                            {% else %}
+                                <span class="avatar bg-secondary-lt text-secondary">
+                                    <i class="ti ti-user-off"></i>
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="col">
+                            <div class="fw-medium">
+                                {% if request_obj.assigned_to %}
+                                    {{ request_obj.assigned_to.get_full_name|default:request_obj.assigned_to.username }}
+                                {% else %}
+                                    <span class="text-muted">{% trans "Unassigned" %}</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-muted small">
+                                {% if request_obj.assigned_to %}
+                                    {% trans "Assigned Staff Member" %}
+                                {% else %}
+                                    {% trans "Awaiting Assignment" %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-3">
+                    
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="avatar bg-blue-lt text-blue">
+                                {{ request_obj.requested_by.get_full_name|first|default:request_obj.requested_by.username|first|upper }}
+                            </span>
+                        </div>
+                        <div class="col">
+                            <div class="fw-medium">{{ request_obj.requested_by.get_full_name|default:request_obj.requested_by.username }}</div>
+                            <div class="text-muted small">{% trans "Original Requester" %}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Activity History Section #}
+    <div class="mt-5">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i class="ti ti-timeline me-2"></i>{% trans "Activity History" %}
+                </h4>
+            </div>
+            <div class="card-body p-0">
                 {% with updates=request_obj.updates_history.all %} 
                 {% if updates %}
-                    <div class="list-group list-group-flush">
+                    <div class="timeline timeline-sm mx-4 my-4">
                     {% for update_entry in updates %}
-                        <div class="list-group-item py-3 px-0">
-                            <div class="row align-items-start">
-                                <div class="col-auto">
-                                    <span class="avatar avatar-sm rounded">
-                                        {{ update_entry.updated_by.username.0|upper|default:"S" }}
-                                    </span>
+                        <div class="timeline-item">
+                            <div class="timeline-point bg-primary"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-time text-muted small">
+                                    {{ update_entry.update_time|date:"M j, Y H:i" }} 
+                                    <span class="text-primary">({{ update_entry.update_time|timesince }} {% trans "ago" %})</span>
                                 </div>
-                                <div class="col">
-                                    <div>
-                                        <strong>{{ update_entry.updated_by.get_full_name|default:update_entry.updated_by.username|default:_("სისტემა") }}</strong>
-                                        {% if update_entry.old_status and update_entry.new_status and update_entry.old_status != update_entry.new_status %}
-                                            <span class="text-muted small ms-1">
-                                                {% trans "შეცვალა სტატუსი" %}
-                                                <span class="badge {{ update_entry.get_old_status_badge_class }}">{{ update_entry.get_old_status_display_safe }}</span>
-                                                {% trans "-დან" %}
-                                                <span class="badge {{ update_entry.get_new_status_badge_class }}">{{ update_entry.get_new_status_display_safe }}</span>
-                                                {% trans "-ზე." %}
-                                            </span>
-                                        {% endif %}
-                                    </div>
-                                    {% if update_entry.notes %}
-                                    <div class="text-muted small mt-1" style="white-space: pre-wrap;">{{ update_entry.notes|linebreaksbr }}</div>
+                                <div class="timeline-title">
+                                    <strong>{{ update_entry.updated_by.get_full_name|default:update_entry.updated_by.username|default:_("System") }}</strong>
+                                    {% if update_entry.old_status and update_entry.new_status and update_entry.old_status != update_entry.new_status %}
+                                        <span class="ms-2">
+                                            {% trans "changed status from" %}
+                                            <span class="badge {{ update_entry.get_old_status_badge_class }}">{{ update_entry.get_old_status_display_safe }}</span>
+                                            {% trans "to" %}
+                                            <span class="badge {{ update_entry.get_new_status_badge_class }}">{{ update_entry.get_new_status_display_safe }}</span>
+                                        </span>
                                     {% endif %}
                                 </div>
-                                <div class="col-auto text-end">
-                                    <small class="text-muted" title="{{ update_entry.update_time|date:"Y-m-d H:i:s" }}">
-                                        {{ update_entry.update_time|timesince }} {% trans "წინ" %}
-                                    </small>
+                                {% if update_entry.notes %}
+                                <div class="timeline-subtitle text-muted mt-1">
+                                    {{ update_entry.notes|linebreaksbr }}
                                 </div>
+                                {% endif %}
                             </div>
                         </div>
                     {% endfor %}
                     </div>
                 {% else %}
-                    <p class="text-muted">{% trans "განახლებები არ არის." %}</p>
+                    <div class="text-center py-5 text-muted">
+                        <i class="ti ti-clock-off h1 text-muted"></i>
+                        <h4 class="text-muted">{% trans "No Activity Yet" %}</h4>
+                        <p>{% trans "No updates have been recorded for this request." %}</p>
+                    </div>
                 {% endif %}
                 {% endwith %}
             </div>
-
-            {% if user_comment_form %}
-            <div class="mt-4 pt-4 border-top">
-                <h4 class="mb-3">{% trans "კომენტარის დამატება" %}</h4>
+        </div>
+    </div>    {# Comments Section #}
+    {% if user_comment_form %}
+    <div class="mt-4">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i class="ti ti-message-plus me-2"></i>{% trans "Add Comment" %}
+                </h4>
+            </div>
+            <div class="card-body">
                 <form method="post" action="{% url 'requests_app:request_detail' pk=request_obj.pk %}">
                     {% csrf_token %}
                     
                     {% for field in user_comment_form %}
                         <div class="mb-3">
-                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            <label for="{{ field.id_for_label }}" class="form-label fw-medium">{{ field.label }}</label>
                             {{ field }}
                             {% if field.help_text %}
-                                <small class="form-text text-muted">{{ field.help_text }}</small>
+                                <div class="form-text text-muted">{{ field.help_text }}</div>
                             {% endif %}
                             {% for error in field.errors %}
                                 <div class="invalid-feedback d-block">{{ error }}</div>
@@ -224,22 +436,29 @@
                         </div>
                     {% endfor %}
                     
-                    <button type="submit" name="submit_user_comment" class="btn btn-info">
-                        <i class="ti ti-send me-1"></i>{% trans "კომენტარის გაგზავნა" %}
-                    </button>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" name="submit_user_comment" class="btn btn-primary">
+                            <i class="ti ti-send me-1"></i>{% trans "Send Comment" %}
+                        </button>
+                    </div>
                 </form>
             </div>
-            {% endif %}
-
         </div>
+    </div>
+    {% endif %}
 
-        <div class="card-footer text-muted text-center small py-2">
-            {% if request_obj.updated_at %}
-                {% blocktrans with time_since=request_obj.updated_at|timesince %}ბოლოს განახლდა {{ time_since }} წინ{% endblocktrans %}
-                (ID: {{ request_obj.pk }})
-            {% else %}
-                {% trans "განახლების დრო უცნობია" %} (ID: {{ request_obj.pk }})
-            {% endif %}
+    {# Footer Information #}
+    <div class="mt-4">
+        <div class="card bg-light">
+            <div class="card-footer text-muted text-center small py-3">
+                <i class="ti ti-info-circle me-1"></i>
+                {% if request_obj.updated_at %}
+                    {% blocktrans with time_since=request_obj.updated_at|timesince %}Last updated {{ time_since }} ago{% endblocktrans %}
+                    <span class="text-secondary ms-2">(Request ID: #{{ request_obj.pk }})</span>
+                {% else %}
+                    {% trans "Update time unknown" %} <span class="text-secondary">(Request ID: #{{ request_obj.pk }})</span>
+                {% endif %}
+            </div>
         </div>
     </div>
 {% else %}
@@ -252,7 +471,49 @@
 {% block extra_js %}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Your JS here if needed
+            // Quick Actions functionality
+            window.updateStatus = function(status) {
+                // This would integrate with your backend API
+                console.log('Updating status to:', status);
+                // Add AJAX call here for real implementation
+                alert('Status update functionality would be implemented here');
+            };
+
+            window.reassignRequest = function() {
+                // This would open a modal or redirect to reassignment page
+                console.log('Reassigning request');
+                alert('Reassignment functionality would be implemented here');
+            };
+
+            // Auto-refresh for real-time updates (optional)
+            const enableAutoRefresh = false; // Set to true to enable
+            if (enableAutoRefresh) {
+                setInterval(function() {
+                    // Check for updates without full page reload
+                    // This could fetch latest status/comments via AJAX
+                }, 30000); // Check every 30 seconds
+            }
+
+            // Smooth scrolling for timeline items
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            timelineItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+            });
+
+            // Form validation enhancement
+            const commentForm = document.querySelector('form[action*="request_detail"]');
+            if (commentForm) {
+                commentForm.addEventListener('submit', function(e) {
+                    const textarea = this.querySelector('textarea');
+                    if (textarea && textarea.value.trim() === '') {
+                        e.preventDefault();
+                        alert('Please enter a comment before submitting.');
+                        textarea.focus();
+                    }
+                });
+            }
         });
     </script>
 {% endblock extra_js %}

@@ -1,5 +1,18 @@
-# Version: 1.1 - 2025-05-26 - Added initial project dependencies.
+# Version: 1.2 - 2025-05-27 - Added security and production dependencies
 Django>=4.2,<5.0
 django-crispy-forms>=2.0,<2.2
 crispy-bootstrap5>=0.7,<0.8
 Pillow>=10.0,<11.0
+python-dotenv>=0.21,<1.0  # For managing environment variables
+
+# Database drivers
+psycopg2-binary>=2.9,<3.0  # PostgreSQL adapter
+
+# Security packages
+django-ratelimit>=4.0,<5.0  # Rate limiting
+django-csp>=3.7,<4.0  # Content Security Policy
+django-security>=0.17,<1.0  # Additional security middleware
+
+# Production packages
+gunicorn>=21.0,<22.0  # WSGI server
+whitenoise>=6.5,<7.0  # Static files serving

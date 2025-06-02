@@ -1,113 +1,487 @@
 {% extends "core/base.html" %}
-{% load static i18n %} {# Added i18n for trans tag, if you use it for button text #}
+{% load static i18n %}
 
+{# Enhanced Equipment Detail Page with Modern Design #}
 {% block title %}{% trans "Equipment Details" %}: {{ equipment.name }}{% endblock %}
 
+{% block page_header_title %}{% endblock page_header_title %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{# Enhanced CSS for modern equipment detail page #}
+{% block extra_head %}
+    <style>
+        .equipment-header {
+            background: linear-gradient(135deg, var(--tblr-primary) 0%, var(--tblr-primary-dark) 100%);
+            color: white;
+            border-radius: var(--tblr-border-radius) var(--tblr-border-radius) 0 0;
+            padding: 2rem;
+            margin-bottom: 0;
+        }
+        .equipment-status-badge {
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+        }
+        .detail-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid var(--tblr-border-color);
+        }
+        .detail-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .info-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: var(--tblr-bg-surface);
+            border-radius: var(--tblr-border-radius);
+            border: 1px solid var(--tblr-border-color);
+        }
+        .info-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.25rem;
+        }
+        .action-buttons {
+            position: sticky;
+            top: 1rem;
+            z-index: 100;
+        }
+        .timeline-item {
+            position: relative;
+            padding-left: 2rem;
+            padding-bottom: 1rem;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0.5rem;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--tblr-primary);
+        }
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 0.75rem;
+            top: 1.25rem;
+            bottom: -1rem;
+            width: 2px;
+            background: var(--tblr-border-color);
+        }
+        .timeline-item:last-child::after {
+            display: none;
+        }
+        .alert-modern {
+            border: none;
+            border-left: 4px solid;
+            border-radius: 0 var(--tblr-border-radius) var(--tblr-border-radius) 0;
+        }
+        .alert-decommissioned {
+            background: rgba(var(--tblr-danger-rgb), 0.1);
+            border-color: var(--tblr-danger);
+        }        .alert-marked {
+            background: rgba(var(--tblr-warning-rgb), 0.1);
+            border-color: var(--tblr-warning);
+        }
+        .timeline {
+            position: relative;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.75rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--tblr-border-color);
+        }
+        @media print {
+            .action-buttons {
+                display: none !important;
+            }
+            .equipment-header {
+                background: var(--tblr-dark) !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+        .text-white-75 {
+            color: rgba(255, 255, 255, 0.75) !important;
+        }
+    </style>
+{% endblock extra_head %}
+
 {% block content %}
-<div class="container mt-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">{% trans "Dashboard" %}</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'inventory:equipment_list' %}">{% trans "Inventory" %}</a></li>
-            <li class="breadcrumb-item active" aria-current="page">{{ equipment.name|truncatewords:5 }}</li>
-        </ol>
-    </nav>
-
-    <h2>
-        <i class="fas {% if equipment.category.icon %}{{ equipment.category.icon }}{% else %}fa-cube{% endif %} me-2"></i>
-        {% trans "Equipment Details" %}: {{ equipment.name }}
-    </h2>
-    <hr>
-
-    {% include "core/includes/messages.html" %} {# Ensure this path is correct for your messages include #}
-
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            {% trans "Details for Asset Tag" %}: <strong>{{ equipment.asset_tag|default:"N/A" }}</strong>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>{% trans "Asset Tag" %}:</strong> {{ equipment.asset_tag|default:"N/A" }}</p>
-                    <p><strong>{% trans "Name" %}:</strong> {{ equipment.name }}</p>
-                    <p><strong>{% trans "Serial Number" %}:</strong> {{ equipment.serial_number|default:_("Not Available") }}</p>
-                    <p><strong>{% trans "Category" %}:</strong> {{ equipment.category.name|default:_("Not Available") }}</p>
-                    <p>
-                        <strong>{% trans "Status" %}:</strong>
-                        <span class="badge 
-                            {% if equipment.status.name == 'In Use' or equipment.status.name == 'გამოყენებაშია' %}bg-success
-                            {% elif equipment.status.name == 'Under Repair' or equipment.status.name == 'შეკეთების პროცესშია' %}bg-warning text-dark
-                            {% elif equipment.status.name == 'In Storage' or equipment.status.name == 'საწყობშია' %}bg-info text-dark
-                            {% elif equipment.status.name == 'Decommissioned' or equipment.status.name == 'ექსპლუატაციიდან გამოსული' or equipment.status.is_decommissioned %}bg-danger
-                            {% else %}bg-secondary{% endif %}">
-                            {{ equipment.status.name|default:_("Not Available") }}
-                        </span>
-                    </p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>{% trans "Current Location" %}:</strong> {{ equipment.current_location.name|default:_("Not Available") }}</p>
-                    <p><strong>{% trans "Assigned To" %}:</strong>
-                        {% if equipment.assigned_to %}
-                            {{ equipment.assigned_to.get_full_name|default:equipment.assigned_to.username }}
-                        {% else %}
-                            {% trans "Not Assigned" %}
-                        {% endif %}
-                    </p>
-                    <p><strong>{% trans "Supplier" %}:</strong> {{ equipment.supplier.name|default:_("Not Available") }}</p>
-                    <p><strong>{% trans "Purchase Date" %}:</strong> {{ equipment.purchase_date|date:"Y-m-d"|default:_("Not Available") }}</p>
-                    <p><strong>{% trans "Purchase Cost" %}:</strong> {% if equipment.purchase_cost %}{{ equipment.purchase_cost|floatformat:2 }} ₾{% else %}{% trans "Not Available" %}{% endif %}</p> {# Changed $ to ₾ #}
-                    <p><strong>{% trans "Warranty Expiry Date" %}:</strong> {{ equipment.warranty_expiry_date|date:"Y-m-d"|default:_("Not Available") }}</p>
+<div class="container-xl">
+    <!-- Modern Equipment Header -->
+    <div class="card equipment-header mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="mb-2">
+                    <i class="ti {% if equipment.category.icon %}{{ equipment.category.icon }}{% else %}ti-device-desktop-analytics{% endif %} me-3"></i>
+                    {{ equipment.name }}
+                </h1>
+                <p class="mb-0 text-white-75">{{ equipment.asset_tag|default:"No Asset Tag" }}</p>
+            </div>
+            <div class="text-end">
+                {% if equipment.status %}
+                <span class="equipment-status-badge badge {{ equipment.get_status_badge_class }}">
+                    {{ equipment.status.name|default:_("N/A") }}
+                </span>
+                {% endif %}
+                <div class="mt-2">
+                    <small class="text-white-75">{{ equipment.category.name|default:_("No Category") }}</small>
                 </div>
             </div>
+        </div>
+    </div>
+
+    {% include "core/includes/messages.html" %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Status Alerts -->            {% if equipment.status and equipment.status.is_decommissioned and equipment.decommission_details %}
+            <div class="alert alert-danger alert-modern alert-decommissioned mb-4" role="alert">
+                <div class="d-flex">
+                    <div class="me-3">
+                        <i class="ti ti-circle-x fs-1 text-danger"></i>
+                    </div>
+                    <div>
+                        <h4 class="alert-title">{% trans "Equipment Decommissioned" %}</h4>
+                        <div class="text-secondary">
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <strong>{% trans "Date:" %}</strong> {{ equipment.decommission_details.decommission_date|date:"Y-m-d" }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>{% trans "By:" %}</strong> {{ equipment.decommission_details.decommissioned_by.get_full_name|default:equipment.decommission_details.decommissioned_by.username }}
+                                </div>
+                            </div>
+                            <p class="mt-2 mb-1"><strong>{% trans "Reason:" %}</strong> {{ equipment.decommission_details.reason|linebreaksbr }}</p>
+                            {% if equipment.decommission_details.method_of_disposal %}
+                                <p class="mb-1"><strong>{% trans "Disposal Method:" %}</strong> {{ equipment.decommission_details.method_of_disposal }}</p>
+                            {% endif %}
+                            {% if equipment.decommission_details.disposal_certificate_id %}
+                                <p class="mb-1"><strong>{% trans "Certificate ID:" %}</strong> {{ equipment.decommission_details.disposal_certificate_id }}</p>
+                            {% endif %}
+                            {% if equipment.decommission_details.notes %}
+                                <p class="mb-0"><strong>{% trans "Notes:" %}</strong> {{ equipment.decommission_details.notes|linebreaksbr }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% elif equipment.status and equipment.status.is_marked_for_write_off %}
+            <div class="alert alert-warning alert-modern alert-marked mb-4" role="alert">
+                <div class="d-flex">
+                    <div class="me-3">
+                        <i class="ti ti-flag-off fs-1 text-warning"></i>
+                    </div>
+                    <div>
+                        <h4 class="alert-title">{% trans "Marked for Write-Off" %}</h4>
+                        <div class="text-secondary">
+                            {% trans "This equipment is pending final decommissioning approval." %}
+                            {% if perms.inventory.delete_equipment %} 
+                                <a href="{% url 'inventory:equipment_decommission' equipment.pk %}" class="btn btn-sm btn-danger ms-2">
+                                    <i class="ti ti-circle-x me-1"></i>{% trans "Confirm Decommission" %}
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Equipment Information Cards -->
+            <div class="info-grid">
+                <!-- Basic Information -->
+                <div class="info-item">
+                    <div class="info-icon bg-primary-lt text-primary">
+                        <i class="ti ti-id"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary">{% trans "Asset Tag" %}</div>
+                        <div class="fw-bold">{{ equipment.asset_tag|default:"N/A" }}</div>
+                    </div>
+                </div>
+
+                <!-- Serial Number -->
+                <div class="info-item">
+                    <div class="info-icon bg-info-lt text-info">
+                        <i class="ti ti-barcode"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary">{% trans "Serial Number" %}</div>
+                        <div class="fw-bold">{{ equipment.serial_number|default:_("Not Available") }}</div>
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <div class="info-item">
+                    <div class="info-icon bg-success-lt text-success">
+                        <i class="ti ti-map-pin"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary">{% trans "Current Location" %}</div>
+                        <div class="fw-bold">{{ equipment.current_location.get_full_path|default:_("Not Available") }}</div>
+                    </div>
+                </div>
+
+                <!-- Assigned To -->
+                <div class="info-item">
+                    <div class="info-icon bg-purple-lt text-purple">
+                        <i class="ti ti-user"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary">{% trans "Assigned To" %}</div>
+                        <div class="fw-bold">
+                            {% if equipment.assigned_to %}
+                                {{ equipment.assigned_to.get_full_name|default:equipment.assigned_to.username }}
+                            {% else %}
+                                {% trans "Not Assigned" %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Supplier -->
+                <div class="info-item">
+                    <div class="info-icon bg-yellow-lt text-yellow">
+                        <i class="ti ti-building-store"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary">{% trans "Supplier" %}</div>
+                        <div class="fw-bold">{{ equipment.supplier.name|default:_("Not Available") }}</div>
+                    </div>
+                </div>
+
+                <!-- Purchase Date -->
+                <div class="info-item">
+                    <div class="info-icon bg-teal-lt text-teal">
+                        <i class="ti ti-calendar"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary">{% trans "Purchase Date" %}</div>
+                        <div class="fw-bold">{{ equipment.purchase_date|date:"Y-m-d"|default:_("Not Available") }}</div>
+                    </div>
+                </div>
+
+                <!-- Purchase Cost -->
+                <div class="info-item">
+                    <div class="info-icon bg-orange-lt text-orange">
+                        <i class="ti ti-currency-lari"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary">{% trans "Purchase Cost" %}</div>
+                        <div class="fw-bold">
+                            {% if equipment.purchase_cost is not None %}{{ equipment.purchase_cost|floatformat:2 }} ₾{% else %}{% trans "Not Available" %}{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Warranty -->
+                <div class="info-item">
+                    <div class="info-icon bg-red-lt text-red">
+                        <i class="ti ti-shield-check"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary">{% trans "Warranty Expiry" %}</div>
+                        <div class="fw-bold">{{ equipment.warranty_expiry_date|date:"Y-m-d"|default:_("Not Available") }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes Section -->
             {% if equipment.notes %}
-            <hr>
-            <h5>{% trans "Notes" %}:</h5>
-            <div class="bg-light p-3 rounded border">
-                {{ equipment.notes|linebreaksbr }}
+            <div class="card detail-card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="ti ti-notes me-2"></i>{% trans "Notes" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-secondary">
+                        {{ equipment.notes|linebreaksbr }}
+                    </div>
+                </div>
             </div>
             {% endif %}
-            <hr>
-            <p class="text-muted small">
-                {% trans "Last Updated" %}: {{ equipment.last_updated|date:"Y-m-d H:i" }} ({% trans "by" %} {{ equipment.updated_by.username|default:_("System") }}) <br>
-                {% trans "Date Added" %}: {{ equipment.date_added|date:"Y-m-d H:i" }} ({% trans "by" %} {{ equipment.added_by.username|default:_("System") }})
-            </p>
+
+            <!-- History Timeline -->
+            <div class="card detail-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="ti ti-history me-2"></i>{% trans "Activity Timeline" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if equipment.logs.all %}
+                        <div class="timeline">
+                            {% for log_entry in equipment.logs.all|slice:":10" %}
+                            <div class="timeline-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ log_entry.get_change_type_display_admin }}</h6>
+                                        {% if log_entry.field_changed %}
+                                            <div class="text-secondary mb-2">
+                                                <strong>{{ log_entry.field_changed }}:</strong>
+                                                {% if log_entry.old_value %}
+                                                    <span class="badge bg-secondary-lt me-1">{{ log_entry.old_value|truncatechars:30 }}</span>
+                                                    <i class="ti ti-arrow-right mx-1"></i>
+                                                {% endif %}
+                                                <span class="badge bg-primary-lt">{{ log_entry.new_value|truncatechars:30 }}</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if log_entry.notes %}
+                                            <p class="text-muted mb-0">{{ log_entry.notes|linebreaksbr }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ log_entry.timestamp|date:"M d, H:i" }}<br>
+                                        {% if log_entry.user %}{{ log_entry.user.username }}{% else %}{% trans "System" %}{% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if equipment.logs.all.count > 10 %}
+                            <div class="text-center mt-3">
+                                <a href="#" class="btn btn-sm btn-outline-primary">{% trans "View All History" %}</a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="ti ti-history fs-1 mb-2"></i>
+                            <p class="mb-0">{% trans "No activity history available." %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        <div class="card-footer text-end">
-            {% if perms.inventory.change_equipment %}
-            <a href="{% url 'inventory:equipment_update' equipment.pk %}" class="btn btn-warning">
-                <i class="fas fa-edit me-1"></i> {% trans "Edit" %}
-            </a>
-            {% endif %}
 
-            {% if perms.inventory.change_equipment and equipment.status and not equipment.status.is_decommissioned %}
-            <a href="{% url 'inventory:equipment_mark_write_off' pk=equipment.pk %}" class="btn btn-outline-danger ms-1">
-                <i class="fas fa-exclamation-triangle me-1"></i> {% trans "Mark for Write-Off" %}
-            </a>
-            {% endif %}
+        <!-- Action Buttons Sidebar -->
+        <div class="col-lg-4">
+            <div class="action-buttons">
+                <!-- Quick Stats -->
+                <div class="card detail-card mb-3">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">{% trans "Quick Info" %}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2 text-center">
+                            <div class="col-6">
+                                <div class="text-secondary small">{% trans "Added" %}</div>
+                                <div class="fw-bold">{{ equipment.date_added|date:"M d, Y" }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-secondary small">{% trans "Updated" %}</div>
+                                <div class="fw-bold">{{ equipment.last_updated|date:"M d, Y" }}</div>
+                            </div>
+                        </div>
+                        <hr class="my-2">
+                        <div class="text-center">
+                            <div class="text-secondary small">{% trans "Last Updated By" %}</div>
+                            <div class="fw-bold">{{ equipment.updated_by.username|default:_("System") }}</div>
+                        </div>
+                    </div>
+                </div>
 
-            {% if perms.inventory.delete_equipment %}
-            <a href="{% url 'inventory:equipment_delete' equipment.pk %}" class="btn btn-danger ms-1">
-                <i class="fas fa-trash-alt me-1"></i> {% trans "Delete" %}
-            </a>
-            {% endif %}
-            <a href="{% url 'inventory:equipment_list' %}" class="btn btn-secondary ms-1">
-                <i class="fas fa-list me-1"></i> {% trans "Back to List" %}
-            </a>
+                <!-- Action Buttons -->
+                <div class="card detail-card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">{% trans "Actions" %}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <!-- Edit Button -->
+                            {% if perms.inventory.change_equipment %}
+                                {% if equipment.status and not equipment.status.is_decommissioned %}
+                                    <a href="{% url 'inventory:equipment_update' equipment.pk %}" class="btn btn-warning">
+                                        <i class="ti ti-edit me-2"></i>{% trans "Edit Equipment" %}
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+
+                            <!-- Mark for Write-Off Button -->
+                            {% if perms.inventory.change_equipment %}
+                                {% if equipment.status and not equipment.status.is_decommissioned and not equipment.status.is_marked_for_write_off %}
+                                    <a href="{% url 'inventory:equipment_mark_for_write_off' equipment.pk %}" class="btn btn-warning">
+                                        <i class="ti ti-flag-off me-2"></i>{% trans "Mark for Write-Off" %}
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+
+                            <!-- Confirm Decommission Button -->
+                            {% if perms.inventory.delete_equipment %}
+                                {% if equipment.status and equipment.status.is_marked_for_write_off and not equipment.status.is_decommissioned %}
+                                    <a href="{% url 'inventory:equipment_decommission' equipment.pk %}" class="btn btn-danger">
+                                        <i class="ti ti-circle-x me-2"></i>{% trans "Confirm Decommission" %}
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+
+                            <!-- Restore Equipment Button -->
+                            {% if perms.inventory.add_equipment %}
+                                {% if equipment.status and equipment.status.is_decommissioned %}
+                                    <a href="{% url 'inventory:equipment_restore' equipment.pk %}" class="btn btn-info">
+                                        <i class="ti ti-recycle me-2"></i>{% trans "Restore Equipment" %}
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+
+                            <!-- Delete Button -->
+                            {% if perms.inventory.delete_equipment %}
+                                 {% if equipment.status %}
+                                    {% if not equipment.status.is_decommissioned and not equipment.status.is_marked_for_write_off %} 
+                                        <a href="{% url 'inventory:equipment_delete' equipment.pk %}" class="btn btn-danger">
+                                            <i class="ti ti-trash me-2"></i>{% trans "Delete" %}
+                                        </a>
+                                    {% endif %}
+                                {% elif not equipment.status %}
+                                     <a href="{% url 'inventory:equipment_delete' equipment.pk %}" class="btn btn-danger">
+                                        <i class="ti ti-trash me-2"></i>{% trans "Delete" %}
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+
+                            <hr class="my-2">
+
+                            <!-- Export/Print Actions -->
+                            <a href="#" class="btn btn-outline-primary" onclick="window.print()">
+                                <i class="ti ti-printer me-2"></i>{% trans "Print Details" %}
+                            </a>
+                            
+                            <a href="{% url 'inventory:equipment_export_pdf' equipment.pk %}" class="btn btn-outline-secondary">
+                                <i class="ti ti-file-type-pdf me-2"></i>{% trans "Export PDF" %}
+                            </a>
+
+                            <hr class="my-2">
+
+                            <a href="{% url 'inventory:equipment_list' %}" class="btn btn-secondary">
+                                <i class="ti ti-arrow-left me-2"></i>{% trans "Back to List" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-
-    {% comment %} Placeholder for Maintenance History and Assignment History sections later {% endcomment %}
-    {% comment %}
-    <div class="mt-4">
-        <h4>{% trans "Maintenance History" %}</h4>
-        <!-- Logic to display maintenance history -->
-    </div>
-
-    <div class="mt-4">
-        <h4>{% trans "Assignment History" %}</h4>
-        <!-- Logic to display assignment history -->
-    </div>
-    {% endcomment %}
-
 </div>
 {% endblock %}

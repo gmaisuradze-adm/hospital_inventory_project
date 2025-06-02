@@ -8,8 +8,8 @@
 
         <h1 class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
             <a href="{% url 'core:dashboard' %}" aria-label="{% trans 'მთავარი გვერდი' %}">
-                <i class="ti ti-building-hospital icon me-2"></i> 
-                <span class="d-none d-sm-inline-block">{% trans "საინვენტარო სისტემა" %}</span>
+                <i class="ti ti-building-hospital icon me-2 text-primary"></i> 
+                <span class="d-none d-sm-inline-block fw-bold text-primary">{% trans "აიტი ინვენტარის სისტემა" %}</span>
             </a>
         </h1>
 
@@ -18,24 +18,24 @@
                 {% if user.is_superuser %}
                 <div class="nav-item d-none d-md-flex me-3">
                     <a href="{% url 'admin:index' %}" class="nav-link px-0" target="_blank" rel="noopener noreferrer" title="{% trans 'ადმინ პანელი' %}" data-bs-toggle="tooltip">
-                        <i class="ti ti-shield-cog icon"></i>
+                        <i class="ti ti-shield-cog icon text-info"></i>
                     </a>
                 </div>
                 {% endif %}
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="{% trans 'მომხმარებლის მენიუს გახსნა' %}">
-                        <span class="avatar avatar-sm bg-blue-lt">{{ user.get_username|slice:":1"|upper }}</span>
+                        <span class="avatar avatar-sm bg-primary text-white">{{ user.get_username|slice:":1"|upper }}</span>
                         <div class="d-none d-xl-block ps-2">
-                            <div>{{ user.get_username }}</div>
+                            <div class="fw-medium">{{ user.get_username }}</div>
                             <div class="mt-1 small text-muted">{% if user.is_staff %}{% trans "ადმინისტრატორი" %}{% else %}{% trans "მომხმარებელი" %}{% endif %}</div>
                         </div>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                        <a href="#" class="dropdown-item"><i class="ti ti-user icon dropdown-item-icon"></i> {% trans "პროფილი" %}</a> {# TODO: Add core:profile URL if you create one #}
+                        <a href="#" class="dropdown-item"><i class="ti ti-user icon dropdown-item-icon text-primary"></i> {% trans "პროფილი" %}</a>
                         <div class="dropdown-divider"></div>
                         <form id="logout-form-nav" method="post" action="{% url 'core:logout' %}" class="mb-0">
                             {% csrf_token %}
-                            <button type="submit" class="dropdown-item"><i class="ti ti-logout icon dropdown-item-icon"></i> {% trans "გასვლა" %}</button>
+                            <button type="submit" class="dropdown-item"><i class="ti ti-logout icon dropdown-item-icon text-danger"></i> {% trans "გასვლა" %}</button>
                         </form>
                     </div>
                 </div>
@@ -57,48 +57,83 @@
             <ul class="navbar-nav mt-2 mt-md-0">
                 <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'core' %}active{% endif %}">
                     <a class="nav-link" href="{% url 'core:dashboard' %}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-chart-line icon"></i></span>
-                        <span class="nav-link-title">{% trans "დეშბორდი" %}</span>
+                        <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-chart-line icon text-primary"></i></span>
+                        <span class="nav-link-title">{% trans "მთავარი დაფა" %}</span>
                     </a>
                 </li>
 
                 {% if user.is_authenticated %}
-                    {# Links to other apps will use their own namespaces #}
                     {% if user.is_staff %}
-                        <li class="nav-item {% if request.resolver_match.app_name == 'inventory' %}active{% endif %}">
-                            <a class="nav-link" href="{% url 'inventory:equipment_list' %}">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-building-warehouse icon"></i></span>
-                                <span class="nav-link-title">{% trans "ინვენტარი" %}</span>
+                        <li class="nav-item dropdown {% if request.resolver_match.app_name == 'inventory' %}active{% endif %}">
+                            <a class="nav-link dropdown-toggle" href="#navbar-inventory" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-building-warehouse icon text-success"></i>
+                                </span>
+                                <span class="nav-link-title">
+                                    {% trans "ინვენტარი" %}
+                                </span>
                             </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'equipment_list' %}active{% endif %}" href="{% url 'inventory:equipment_list' %}">
+                                    <i class="ti ti-list-details icon dropdown-item-icon text-primary"></i>
+                                    {% trans "მთელი აქტიური ტექნიკა" %}
+                                </a>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'marked_for_write_off_list' %}active{% endif %}" href="{% url 'inventory:marked_for_write_off_list' %}">
+                                    <i class="ti ti-file-alert icon dropdown-item-icon text-warning"></i>
+                                    {% trans "გადასაწერი" %}
+                                </a>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'decommissioned_list' %}active{% endif %}" href="{% url 'inventory:decommissioned_list' %}">
+                                    <i class="ti ti-archive icon dropdown-item-icon text-secondary"></i>
+                                    {% trans "გამოვლილი ტექნიკა" %}
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'category_list' %}active{% endif %}" href="{% url 'inventory:category_list' %}">
+                                    <i class="ti ti-tags icon dropdown-item-icon text-info"></i>
+                                    {% trans "კატეგორიები" %}
+                                </a>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'status_list' %}active{% endif %}" href="{% url 'inventory:status_list' %}">
+                                    <i class="ti ti-checkup-list icon dropdown-item-icon text-info"></i>
+                                    {% trans "სტატუსები" %}
+                                </a>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'location_list' %}active{% endif %}" href="{% url 'inventory:location_list' %}">
+                                    <i class="ti ti-map-pin icon dropdown-item-icon text-danger"></i>
+                                    {% trans "ლოკაციები" %}
+                                </a>
+                                <a class="dropdown-item {% if request.resolver_match.url_name == 'supplier_list' %}active{% endif %}" href="{% url 'inventory:supplier_list' %}">
+                                    <i class="ti ti-truck-delivery icon dropdown-item-icon text-warning"></i>
+                                    {% trans "მომწოდებლები" %}
+                                </a>
+                            </div>
                         </li>
+                        
                         <li class="nav-item {% if request.resolver_match.app_name == 'warehouse' and request.resolver_match.url_name == 'stockitem_list' %}active{% endif %}">
                             <a class="nav-link" href="{% url 'warehouse:stockitem_list' %}">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-packages icon"></i></span>
+                                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-packages icon text-info"></i></span>
                                 <span class="nav-link-title">{% trans "საწყობი" %}</span>
                             </a>
                         </li>
                         <li class="nav-item {% if request.resolver_match.app_name == 'requests_app' and request.resolver_match.url_name == 'admin_request_list' %}active{% endif %}">
                             <a class="nav-link" href="{% url 'requests_app:admin_request_list' %}">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-clipboard-list icon"></i></span>
+                                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-clipboard-list icon text-warning"></i></span>
                                 <span class="nav-link-title">{% trans "მოთხოვნები" %}</span>
                             </a>
                         </li>
-                    {% else %}
+                    {% else %} 
                          <li class="nav-item {% if request.resolver_match.app_name == 'inventory' %}active{% endif %}">
                             <a class="nav-link" href="{% url 'inventory:equipment_list' %}">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-device-desktop-analytics icon"></i></span>
+                                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-device-desktop-analytics icon text-success"></i></span>
                                 <span class="nav-link-title">{% trans "ინვენტარი" %}</span>
                             </a>
                         </li>
                         <li class="nav-item {% if request.resolver_match.app_name == 'warehouse' and request.resolver_match.url_name == 'stockitem_list' %}active{% endif %}">
                             <a class="nav-link" href="{% url 'warehouse:stockitem_list' %}">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-package icon"></i></span>
+                                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-package icon text-info"></i></span>
                                 <span class="nav-link-title">{% trans "საწყობი" %}</span>
                             </a>
                         </li>
                         <li class="nav-item {% if request.resolver_match.app_name == 'requests_app' and request.resolver_match.url_name == 'user_request_list' %}active{% endif %}">
                             <a class="nav-link" href="{% url 'requests_app:user_request_list' %}">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-ticket icon"></i></span>
+                                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-ticket icon text-primary"></i></span>
                                 <span class="nav-link-title">{% trans "ჩემი მოთხოვნები" %}</span>
                             </a>
                         </li>

@@ -22,22 +22,22 @@
 {# --- 3. მოქმედების ღილაკები გვერდის მთავარ სათაურში (მარჯვნივ) --- #}
 {% block page_action_buttons %}
     {% if item %}
-        <a href="{% url 'warehouse:stockitem_list' %}" class="btn btn-outline-secondary">
-            <i class="ti ti-arrow-left me-1"></i> {% trans "დაბრუნება სიაში" %}
+        <a href="{% url 'warehouse:stockitem_list' %}" class="btn btn-secondary" title="{% trans 'დაბრუნება სიაში' %}">
+            <i class="ti ti-arrow-left"></i>
         </a>
         {% if perms.warehouse.change_stockitem %}
-        <a href="{% url 'warehouse:stockitem_edit' item.pk %}" class="btn btn-primary">
-            <i class="ti ti-edit me-1"></i> {% trans "რედაქტირება" %}
+        <a href="{% url 'warehouse:stockitem_edit' item.pk %}" class="btn btn-primary" title="{% trans 'რედაქტირება' %}">
+            <i class="ti ti-edit"></i>
         </a>
         {% endif %}
         {% if perms.warehouse.delete_stockitem %}
-        <a href="{% url 'warehouse:stockitem_delete' item.pk %}" class="btn btn-danger">
-            <i class="ti ti-trash me-1"></i> {% trans "წაშლა" %}
+        <a href="{% url 'warehouse:stockitem_delete' item.pk %}" class="btn btn-danger" title="{% trans 'წაშლა' %}">
+            <i class="ti ti-trash"></i>
         </a>
         {% endif %}
     {% else %}
-         <a href="{% url 'warehouse:stockitem_list' %}" class="btn btn-outline-secondary">
-            <i class="ti ti-arrow-left me-1"></i> {% trans "დაბრუნება სიაში" %}
+         <a href="{% url 'warehouse:stockitem_list' %}" class="btn btn-secondary" title="{% trans 'დაბრუნება სიაში' %}">
+            <i class="ti ti-arrow-left"></i>
         </a>
     {% endif %}
 {% endblock page_action_buttons %}
