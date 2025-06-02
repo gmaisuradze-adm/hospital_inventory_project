@@ -16,11 +16,32 @@ const Login = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (values, { setSubmitting }) => {
+    console.log('🔐 Login attempt started with values:', {
+      username: values.username,
+      password: values.password ? '[HIDDEN]' : 'EMPTY',
+      passwordLength: values.password ? values.password.length : 0
+    });
+    
     setSubmitError(null);
-    const success = await login(values);
-    if (success) {
-      navigate('/');
+    
+    try {
+      console.log('🔄 Calling login function from AuthContext...');
+      const success = await login(values);
+      
+      console.log('✅ Login function returned:', success);
+      
+      if (success) {
+        console.log('🎉 Login successful, navigating to home page...');
+        navigate('/');
+      } else {
+        console.log('❌ Login failed - success was false');
+        setSubmitError('Login failed. Please check your credentials and try again.');
+      }
+    } catch (loginError) {
+      console.error('💥 Login function threw an error:', loginError);
+      setSubmitError(`Login error: ${loginError.message || 'Unknown error occurred'}`);
     }
+    
     setSubmitting(false);
   };
 
