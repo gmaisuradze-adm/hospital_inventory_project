@@ -2,15 +2,13 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const { initializeModuleRegistry } = require('./core/module-registry');
+const path = require('path');
 const { connectDatabase } = require('./core/database');
-const { setupEventSystem } = require('./core/events');
-const { loadConfiguration } = require('./core/config');
 const authRoutes = require('./core/auth/routes');
+const { registerAllModules } = require('./modules');
 
-// Initialize Express app
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3003; // Changed port to 3003
 
 // Middleware
 app.use(helmet());
@@ -18,47 +16,98 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Load system configuration
-const config = loadConfiguration();
+// Serve static files from the "public" directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize core components
-const moduleRegistry = initializeModuleRegistry();
-const eventSystem = setupEventSystem();
+connectDatabase();
+const moduleRegistry = registerAllModules();
 
-// Connect to database
-connectDatabase()
-  .then(() => {
-    console.log('Database connected successfully');
-    
-    // Register core routes
-    app.use('/api/auth', authRoutes);
-    
-    // Register all modules
-    const modules = moduleRegistry.getAllModules();
-    modules.forEach(module => {
-      if (module.routes) {
-        app.use(`/api/${module.name}`, module.routes);
-      }
-    });
-    
-    // Error handling middleware
-    app.use((err, req, res, next) => {
-      console.error(err.stack);
-      res.status(500).json({
-        error: true,
-        message: 'Internal Server Error',
-        details: process.env.NODE_ENV === 'development' ? err.message : undefined
-      });
-    });
-    
-    // Start the server
-    app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
-      // Emit system startup event
-      eventSystem.emit('system:startup');
-    });
-  })
-  .catch(err => {
-    console.error('Failed to connect to database:', err);
-    process.exit(1);
+// Core routes
+app.use('/api/auth', authRoutes);
+
+// Root route - API status
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Hospital Inventory Management System API',
+    status: 'operational',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    modules: moduleRegistry.getModuleNames(),
+    endpoints: {
+      auth: '/api/auth',
+      inventory: '/api/inventory',
+      warehouse: '/api/warehouse',
+      requests: '/api/requests',
+      serviceManagement: '/api/service-management'
+    }
   });
+});
+
+// API status route
+app.get('/api/status', (req, res) => {
+  res.json({
+    status: 'operational',
+    timestamp: new Date().toISOString(),
+    modules: moduleRegistry.getModuleNames(),
+    uptime: process.uptime()
+  });
+});
+
+// Register module routes
+moduleRegistry.registerRoutes(app);
+
+// Serve static files from frontend build directory (if available)
+const frontendBuildPath = path.join(__dirname, 'frontend', 'build');
+app.use(express.static(frontendBuildPath));
+
+// Catch all handler for frontend routing (SPA support)
+app.get('*', (req, res, next) => {
+  // Skip API routes
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+  
+  // Try to serve the frontend index.html for SPA routing
+  const indexPath = path.join(frontendBuildPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      // If no built frontend, show the API response
+      res.json({
+        message: 'Hospital Inventory Management System API',
+        status: 'operational',
+        version: '1.0.0',
+        timestamp: new Date().toISOString(),
+        modules: moduleRegistry.getModuleNames(),
+        endpoints: {
+          auth: '/api/auth',
+          inventory: '/api/inventory',
+          warehouse: '/api/warehouse',
+          requests: '/api/requests',
+          serviceManagement: '/api/service-management'
+        },
+        note: 'Frontend not built yet. Build the React frontend in /frontend directory to serve the full application.'
+      });
+    }
+  });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    error: true,
+    message: process.env.NODE_ENV === 'production' 
+      ? 'An unexpected error occurred' 
+      : err.message
+  });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`Initialized modules: ${moduleRegistry.getModuleNames().join(', ')}`);
+});
+
+module.exports = app;

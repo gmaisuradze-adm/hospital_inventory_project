@@ -1,0 +1,8 @@
+{
+  "enableLowStockAlerts": true,
+  "lowStockThreshold": 5,
+  "enableBarcodeScanning": false,
+  "defaultWarehouse": null,
+  "autoGenerateOrderNumbers": true,
+  "orderNumberPrefix": "PO-"
+}

@@ -1,0 +1,6 @@
+{
+  "enableAutoWarrantyAlerts": true,
+  "warrantyAlertThresholdDays": 30,
+  "assetTagPrefix": "ITMS-",
+  "enableBarcodeScanning": false
+}

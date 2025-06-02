@@ -1,14 +1,15 @@
 const jwt = require('jsonwebtoken');
-const { User, Role } = require('./models');
-const { getModel } = require('../database');
+const { User } = require('./models');
 
 /**
  * Login controller
  */
-async function login(req, res) {
+async function login(req, res, next) {
   try {
     const { username, password } = req.body;
+    console.log('Login attempt:', { username, hasPassword: !!password });
     
+    // Validate input
     if (!username || !password) {
       return res.status(400).json({
         error: true,
@@ -16,21 +17,27 @@ async function login(req, res) {
       });
     }
     
-    // Find user by username
-    const user = await User.findOne({
-      where: { username },
-      include: [{ model: Role }]
+    // Find user
+    const user = await User.findOne({ where: { username } });
+    console.log('User found:', { 
+      found: !!user, 
+      active: user?.active,
+      hasStoredPassword: !!user?.password,
+      storedPasswordLength: user?.password?.length
     });
     
-    if (!user) {
+    if (!user || !user.active) {
       return res.status(401).json({
         error: true,
-        message: 'Invalid credentials'
+        message: 'Invalid credentials or inactive account'
       });
     }
     
-    // Verify password
-    const passwordValid = await user.verifyPassword(password);
+    // Check password
+    console.log('Checking password for user:', username);
+    const passwordValid = await user.checkPassword(password);
+    console.log('Password validation result:', passwordValid);
+    
     if (!passwordValid) {
       return res.status(401).json({
         error: true,
@@ -38,73 +45,56 @@ async function login(req, res) {
       });
     }
     
-    // Check if user is active
-    if (!user.isActive) {
-      return res.status(403).json({
-        error: true,
-        message: 'Account is inactive'
-      });
-    }
-    
-    // Update last login
-    user.lastLogin = new Date();
-    await user.save();
+    // Update last login timestamp
+    await user.update({ lastLogin: new Date() });
     
     // Generate JWT token
-    const roles = user.roles.map(role => role.name);
-    const token = jwt.sign({ 
-      userId: user.id,
-      username: user.username,
-      roles
-    }, process.env.JWT_SECRET, {
-      expiresIn: '24h'
-    });
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        username: user.username, 
+        role: user.role 
+      }, 
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRATION || '1d' }
+    );
     
     res.json({
-      error: false,
-      message: 'Login successful',
-      data: {
-        token,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          roles
-        }
-      }
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      },
+      token
     });
-  } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({
-      error: true,
-      message: 'Internal Server Error'
-    });
+    
+  } catch (error) {
+    next(error);
   }
 }
 
 /**
- * Register new user
+ * Register user controller
  */
-async function register(req, res) {
+async function register(req, res, next) {
   try {
-    const { username, email, password, firstName, lastName } = req.body;
+    const { username, email, password, firstName, lastName, role } = req.body;
     
-    if (!username || !email || !password) {
+    // Validate input
+    if (!username || !email || !password || !firstName || !lastName) {
       return res.status(400).json({
         error: true,
-        message: 'Username, email, and password are required'
+        message: 'All fields are required'
       });
     }
     
     // Check if user already exists
     const existingUser = await User.findOne({
       where: {
-        [Sequelize.Op.or]: [
-          { username },
-          { email }
-        ]
+        [Sequelize.Op.or]: [{ username }, { email }]
       }
     });
     
@@ -121,45 +111,33 @@ async function register(req, res) {
       email,
       password,
       firstName,
-      lastName
+      lastName,
+      role: role || 'staff' // Default to staff if not specified
     });
-    
-    // Assign default role (User)
-    const userRole = await Role.findOne({
-      where: { name: 'User' }
-    });
-    
-    if (userRole) {
-      await user.addRole(userRole);
-    }
     
     res.status(201).json({
-      error: false,
-      message: 'User registered successfully',
-      data: {
+      message: 'User created successfully',
+      user: {
         id: user.id,
         username: user.username,
-        email: user.email
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
       }
     });
-  } catch (err) {
-    console.error('Registration error:', err);
-    res.status(500).json({
-      error: true,
-      message: 'Internal Server Error'
-    });
+    
+  } catch (error) {
+    next(error);
   }
 }
 
 /**
- * Get user profile
+ * Get current user profile
  */
-async function getProfile(req, res) {
+async function getProfile(req, res, next) {
   try {
-    const userId = req.user.userId;
-    
-    const user = await User.findByPk(userId, {
-      include: [{ model: Role }],
+    const user = await User.findByPk(req.user.id, {
       attributes: { exclude: ['password'] }
     });
     
@@ -170,26 +148,10 @@ async function getProfile(req, res) {
       });
     }
     
-    const roles = user.roles.map(role => role.name);
+    res.json({ user });
     
-    res.json({
-      error: false,
-      data: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        roles,
-        lastLogin: user.lastLogin
-      }
-    });
-  } catch (err) {
-    console.error('Get profile error:', err);
-    res.status(500).json({
-      error: true,
-      message: 'Internal Server Error'
-    });
+  } catch (error) {
+    next(error);
   }
 }
 

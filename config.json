@@ -1,0 +1,32 @@
+{
+  "system": {
+    "name": "Hospital IT Management System",
+    "version": "1.0.0",
+    "description": "Modular IT Management System for Hospital Environments"
+  },
+  "modules": {
+    "inventory": {
+      "enabled": true,
+      "assetTypes": ["Computer", "Printer", "Network", "Server", "Mobile", "Other"],
+      "statuses": ["Available", "In Use", "Under Repair", "Retired"]
+    },
+    "warehouse": {
+      "enabled": true,
+      "locationTypes": ["Warehouse", "Department", "Office", "Storage"]
+    },
+    "requests": {
+      "enabled": true,
+      "requestTypes": ["Equipment", "Software", "Access", "Service", "Other"],
+      "priorities": ["Low", "Medium", "High", "Critical"]
+    },
+    "service-management": {
+      "enabled": true,
+      "ticketTypes": ["Incident", "Request", "Problem", "Change"],
+      "priorities": ["Low", "Medium", "High", "Critical"],
+      "statuses": ["New", "Assigned", "In Progress", "On Hold", "Resolved", "Closed"]
+    },
+    "analytics": {
+      "enabled": true
+    }
+  }
+}

@@ -1,0 +1,103 @@
+@import '@tabler/core/dist/css/tabler.min.css';
+
+:root {
+  --primary: #206bc4;
+  --primary-lt: rgba(32, 107, 196, 0.1);
+  --primary-dk: #1a58a3;
+  --secondary: #626976;
+  --success: #2fb344;
+  --danger: #d63939;
+  --warning: #f76707;
+  --info: #4299e1;
+  
+  --sidebar-width: 16rem;
+  --sidebar-width-collapsed: 4rem;
+}
+
+// Common overrides
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f7fb;
+  color: #1f2937;
+  line-height: 1.5;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+// Cards
+.card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+  }
+  
+  .card-title {
+    font-weight: 600;
+  }
+}
+
+// Buttons
+.btn-primary {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  
+  &:hover, &:active, &:focus {
+    background-color: var(--primary-dk);
+    border-color: var(--primary-dk);
+  }
+}
+
+// Avatar
+.avatar {
+  position: relative;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-weight: 500;
+  
+  &.avatar-xl {
+    width: 6rem;
+    height: 6rem;
+    font-size: 1.5rem;
+  }
+}
+
+// Widget styles for analytics dashboard
+.dashboard-widget {
+  height: 100%;
+  min-height: 250px;
+}
+
+// Status indicators
+.status-indicator {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 0.5rem;
+
+  &.active { background-color: #2fb344; }
+  &.inactive { background-color: #d63939; }
+  &.warning { background-color: #f59f00; }
+  &.processing { background-color: #4299e1; }
+}
+
+// Print styles
+@media print {
+  .no-print {
+    display: none;
+  }
+  
+  .print-only {
+    display: block;
+  }
+}

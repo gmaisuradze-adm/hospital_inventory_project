@@ -1,0 +1,11 @@
+{
+  "enableEmailNotifications": true,
+  "defaultAssignmentRole": "manager",
+  "autoApproveThreshold": 0,
+  "defaultWorkflowByRequestType": {
+    "Equipment": "equipment-request",
+    "Software": "software-request",
+    "Access": "access-request",
+    "Service": "service-request"
+  }
+}

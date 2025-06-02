@@ -26,68 +26,47 @@ const User = sequelize.define('user', {
     allowNull: false
   },
   firstName: {
-    type: Sequelize.STRING
+    type: Sequelize.STRING,
+    allowNull: false
   },
   lastName: {
-    type: Sequelize.STRING
+    type: Sequelize.STRING,
+    allowNull: false
   },
-  isActive: {
+  role: {
+    type: Sequelize.ENUM('admin', 'manager', 'staff'),
+    defaultValue: 'staff'
+  },
+  active: {
     type: Sequelize.BOOLEAN,
     defaultValue: true
   },
   lastLogin: {
     type: Sequelize.DATE
   }
-});
-
-// Role model
-const Role = sequelize.define('role', {
-  id: {
-    type: Sequelize.UUID,
-    defaultValue: Sequelize.UUIDV4,
-    primaryKey: true
-  },
-  name: {
-    type: Sequelize.STRING,
-    allowNull: false,
-    unique: true
-  },
-  description: {
-    type: Sequelize.STRING
+}, {
+  hooks: {
+    beforeCreate: async (user) => {
+      if (user.password) {
+        user.password = await bcrypt.hash(user.password, 10);
+      }
+    },
+    beforeUpdate: async (user) => {
+      if (user.changed('password')) {
+        user.password = await bcrypt.hash(user.password, 10);
+      }
+    }
   }
 });
 
-// UserRole model (many-to-many relationship)
-const UserRole = sequelize.define('user_role', {
-  id: {
-    type: Sequelize.UUID,
-    defaultValue: Sequelize.UUIDV4,
-    primaryKey: true
-  }
-});
-
-// Define relationships
-User.belongsToMany(Role, { through: UserRole });
-Role.belongsToMany(User, { through: UserRole });
-
-// Hash password before saving user
-User.beforeCreate(async (user) => {
-  const salt = await bcrypt.genSalt(10);
-  user.password = await bcrypt.hash(user.password, salt);
-});
-
-// Method to verify password
-User.prototype.verifyPassword = async function(password) {
-  return await bcrypt.compare(password, this.password);
+// Instance method to check password
+User.prototype.checkPassword = async function(password) {
+  return bcrypt.compare(password, this.password);
 };
 
-// Register models
-registerModel('User', User);
-registerModel('Role', Role);
-registerModel('UserRole', UserRole);
+// Register the model
+registerModel('User', User, 'core');
 
 module.exports = {
-  User,
-  Role,
-  UserRole
+  User
 };
