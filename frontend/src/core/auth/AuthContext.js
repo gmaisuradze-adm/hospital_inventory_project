@@ -2,11 +2,10 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 import jwtDecode from 'jwt-decode';
 
-import config from '../config';
-
 // Set axios base URL for API calls
-axios.defaults.baseURL = config.apiUrl;
-console.log('Setting axios baseURL to:', config.apiUrl);
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3003'; // Changed port to 3003
+axios.defaults.baseURL = API_BASE_URL;
+console.log('Setting axios baseURL to:', API_BASE_URL);
 
 const AuthContext = createContext();
 
