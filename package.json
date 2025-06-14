@@ -1,0 +1,27 @@
+{
+  "name": "hospital-inventory-management",
+  "version": "1.0.0",
+  "description": "Hospital IT Inventory Management System",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd backend && npm run dev",
+    "client": "cd frontend && npm start",
+    "build": "cd frontend && npm run build",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "test": "cd backend && npm test && cd ../frontend && npm test"
+  },
+  "keywords": [
+    "hospital",
+    "inventory",
+    "management",
+    "react",
+    "nodejs"
+  ],
+  "author": "Hospital IT Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "prisma": "^6.9.0"
+  }
+}

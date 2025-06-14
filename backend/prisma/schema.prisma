@@ -1,0 +1,268 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  username    String   @unique
+  password    String
+  firstName   String?
+  lastName    String?
+  role        String   @default("USER") // ADMIN, IT_ADMIN, FINANCE_ADMIN, MANAGER, USER
+  department  String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastLogin   DateTime?
+
+  // Relations
+  requestedITRequests     ITRequest[]        @relation("RequestedBy")
+  assignedITRequests      ITRequest[]        @relation("AssignedTo")
+  requestedProcurements   ProcurementRequest[] @relation("RequestedBy")
+  approvedProcurements    ProcurementRequest[] @relation("ApprovedBy")
+  auditLogs              AuditLog[]
+  notifications          Notification[]
+  createdForms           Form[]
+
+  @@map("users")
+}
+
+model Form {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  fields      String     // JSON string for dynamic form fields
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  createdBy   String
+  creator     User       @relation(fields: [createdBy], references: [id])
+
+  // Relations
+  submissions FormSubmission[]
+
+  @@map("forms")
+}
+
+model FormSubmission {
+  id        String   @id @default(cuid())
+  formId    String
+  data      String   // JSON string for form submission data
+  createdAt DateTime @default(now())
+  form      Form     @relation(fields: [formId], references: [id])
+
+  @@map("form_submissions")
+}
+
+model ITRequest {
+  id              String            @id @default(cuid())
+  title           String
+  description     String
+  department      String
+  priority        String            @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  category        String            // HARDWARE, SOFTWARE, NETWORK, SECURITY, MAINTENANCE, OTHER
+  status          String            @default("PENDING") // PENDING, APPROVED, REJECTED, IN_PROGRESS, COMPLETED, CANCELLED
+  requestedBy     String
+  assignedTo      String?
+  requestedDate   DateTime?
+  estimatedCost   Float?
+  actualCost      Float?
+  justification   String?
+  notes           String?
+  itemId          String? // Reference to inventory item if applicable
+  quantity        Int     @default(1)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  completedAt     DateTime?
+
+  // Relations
+  requestedByUser User  @relation("RequestedBy", fields: [requestedBy], references: [id])
+  assignedToUser  User? @relation("AssignedTo", fields: [assignedTo], references: [id])
+  inventoryItem   InventoryItem? @relation(fields: [itemId], references: [id])
+
+  @@map("it_requests")
+}
+
+model InventoryItem {
+  id                String            @id @default(cuid())
+  name              String
+  description       String?
+  category          String            // COMPUTER, SERVER, PRINTER, NETWORK_EQUIPMENT, PERIPHERAL, SOFTWARE, CONSUMABLE, SPARE_PART, MOBILE_DEVICE, OTHER
+  status            String            @default("AVAILABLE") // AVAILABLE, IN_USE, MAINTENANCE, RETIRED, DAMAGED, RESERVED, OUT_OF_STOCK
+  location          String
+  serialNumber      String?           @unique
+  model             String?
+  manufacturer      String?
+  purchaseDate      DateTime?
+  warrantyExpiry    DateTime?
+  cost              Float?
+  quantity          Int               @default(1)
+  minQuantity       Int?
+  maxQuantity       Int?
+  reorderPoint      Int?
+  barcode           String?
+  condition         String?
+  assignedTo        String?
+  department        String?
+  supplier          String?
+  notes             String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  aiRecommendations  AIRecommendation[]
+  demandForecasts    DemandForecast[]
+  requests          ITRequest[]
+
+  @@map("inventory_items")
+}
+
+model ProcurementRequest {
+  id              String              @id @default(cuid())
+  title           String
+  description     String
+  department      String
+  category        String              // HARDWARE, SOFTWARE, SERVICES, MAINTENANCE, OTHER
+  priority        String              @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status          String              @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED, ORDERED, DELIVERED, CANCELLED
+  estimatedCost   Float
+  actualCost      Float?
+  budget          String
+  vendor          String?
+  orderNumber     String?
+  deliveryDate    DateTime?
+  justification   String
+  specifications  String?
+  notes           String?
+  requestedBy     String
+  approvedBy      String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  approvedAt      DateTime?
+  orderedAt       DateTime?
+  deliveredAt     DateTime?
+
+  // Relations
+  requestedByUser User  @relation("RequestedBy", fields: [requestedBy], references: [id])
+  approvedByUser  User? @relation("ApprovedBy", fields: [approvedBy], references: [id])
+
+  @@map("procurement_requests")
+}
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  userId      String
+  action      String
+  resource    String
+  resourceId  String?
+  entityType  String?
+  details     String?
+  oldValues   String?   // JSON string
+  newValues   String?   // JSON string
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model Notification {
+  id        String             @id @default(cuid())
+  title     String
+  message   String
+  type      String             @default("INFO") // INFO, WARNING, ERROR, SUCCESS
+  userId    String
+  isRead    Boolean            @default(false)
+  createdAt DateTime           @default(now())
+
+  // Relations
+  user      User               @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model Report {
+  id          String      @id @default(cuid())
+  name        String
+  type        String      // INVENTORY, PROCUREMENT, REQUESTS, AUDIT, ANALYTICS
+  parameters  String      // JSON string
+  filePath    String?
+  createdAt   DateTime    @default(now())
+  createdBy   String
+
+  @@map("reports")
+}
+
+model AIRecommendation {
+  id                    String   @id @default(cuid())
+  itemId                String   @unique
+  optimalOrderQuantity  Int
+  reorderPoint          Int
+  safetyStock           Int
+  forecastAccuracy      Float    @default(0.85)
+  abcCategory           String   @default("C") // A, B, C categories
+  recommendations       String[] // Array of recommendation strings
+  lastForecastDate      DateTime?
+  nextReviewDate        DateTime?
+  confidence            Float    @default(0.95)
+  modelUsed             String?  // arima, prophet, lstm, etc.
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  item                  InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@map("ai_recommendations")
+}
+
+model AIModelMetrics {
+  id            String   @id @default(cuid())
+  modelName     String   // arima, prophet, lstm, random_forest
+  version       String   @default("1.0")
+  mae           Float    // Mean Absolute Error
+  rmse          Float    // Root Mean Square Error
+  mape          Float    // Mean Absolute Percentage Error
+  accuracy      Float    // Accuracy percentage
+  r2Score       Float?   // R-squared score
+  trainingData  Int      // Number of training data points
+  lastTrained   DateTime
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("ai_model_metrics")
+}
+
+model DemandForecast {
+  id               String   @id @default(cuid())
+  itemId           String
+  forecastDate     DateTime // Date for which forecast is made
+  predictedDemand  Float
+  confidenceLower  Float?
+  confidenceUpper  Float?
+  modelUsed        String
+  accuracy         Float?
+  generatedAt      DateTime @default(now())
+  isActive         Boolean  @default(true)
+
+  // Relations
+  item             InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@map("demand_forecasts")
+  @@index([itemId, forecastDate])
+}
+
+// Note: SQLite doesn't support enums, so we use string fields with default values and validation in the application layer
+// Enum-like values are documented in comments for each field throughout the schema

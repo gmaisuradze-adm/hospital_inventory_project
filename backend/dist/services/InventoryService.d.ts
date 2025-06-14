@@ -1,0 +1,206 @@
+import { CreateInventoryItemInput, UpdateInventoryItemInput } from '../schemas';
+export declare class InventoryService {
+    private auditService;
+    private notificationService;
+    createItem(data: CreateInventoryItemInput, userId: string): Promise<{
+        model: string | null;
+        id: string;
+        department: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        status: string;
+        description: string | null;
+        assignedTo: string | null;
+        category: string;
+        location: string;
+        serialNumber: string | null;
+        manufacturer: string | null;
+        purchaseDate: Date | null;
+        warrantyExpiry: Date | null;
+        cost: number | null;
+        quantity: number;
+        minQuantity: number | null;
+        maxQuantity: number | null;
+        reorderPoint: number | null;
+        barcode: string | null;
+        condition: string | null;
+        supplier: string | null;
+        notes: string | null;
+    }>;
+    getItems(filters: {
+        category?: string;
+        status?: string;
+        location?: string;
+        search?: string;
+        page?: number;
+        limit?: number;
+    }): Promise<{
+        items: {
+            model: string | null;
+            id: string;
+            department: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string;
+            status: string;
+            description: string | null;
+            assignedTo: string | null;
+            category: string;
+            location: string;
+            serialNumber: string | null;
+            manufacturer: string | null;
+            purchaseDate: Date | null;
+            warrantyExpiry: Date | null;
+            cost: number | null;
+            quantity: number;
+            minQuantity: number | null;
+            maxQuantity: number | null;
+            reorderPoint: number | null;
+            barcode: string | null;
+            condition: string | null;
+            supplier: string | null;
+            notes: string | null;
+        }[];
+        pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            pages: number;
+        };
+    }>;
+    getItemById(id: string): Promise<{
+        model: string | null;
+        id: string;
+        department: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        status: string;
+        description: string | null;
+        assignedTo: string | null;
+        category: string;
+        location: string;
+        serialNumber: string | null;
+        manufacturer: string | null;
+        purchaseDate: Date | null;
+        warrantyExpiry: Date | null;
+        cost: number | null;
+        quantity: number;
+        minQuantity: number | null;
+        maxQuantity: number | null;
+        reorderPoint: number | null;
+        barcode: string | null;
+        condition: string | null;
+        supplier: string | null;
+        notes: string | null;
+    }>;
+    updateItem(id: string, data: UpdateInventoryItemInput, userId: string): Promise<{
+        model: string | null;
+        id: string;
+        department: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        status: string;
+        description: string | null;
+        assignedTo: string | null;
+        category: string;
+        location: string;
+        serialNumber: string | null;
+        manufacturer: string | null;
+        purchaseDate: Date | null;
+        warrantyExpiry: Date | null;
+        cost: number | null;
+        quantity: number;
+        minQuantity: number | null;
+        maxQuantity: number | null;
+        reorderPoint: number | null;
+        barcode: string | null;
+        condition: string | null;
+        supplier: string | null;
+        notes: string | null;
+    }>;
+    deleteItem(id: string, userId: string): Promise<{
+        message: string;
+    }>;
+    getLowStockItems(threshold?: number): Promise<{
+        model: string | null;
+        id: string;
+        department: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        status: string;
+        description: string | null;
+        assignedTo: string | null;
+        category: string;
+        location: string;
+        serialNumber: string | null;
+        manufacturer: string | null;
+        purchaseDate: Date | null;
+        warrantyExpiry: Date | null;
+        cost: number | null;
+        quantity: number;
+        minQuantity: number | null;
+        maxQuantity: number | null;
+        reorderPoint: number | null;
+        barcode: string | null;
+        condition: string | null;
+        supplier: string | null;
+        notes: string | null;
+    }[]>;
+    getItemsByCategory(): Promise<{
+        category: string;
+        itemCount: number;
+        totalQuantity: number;
+        totalCost: number;
+    }[]>;
+    getItemsByStatus(): Promise<{
+        status: string;
+        count: number;
+    }[]>;
+    getInventoryValue(): Promise<{
+        totalValue: number;
+        totalItems: number;
+    }>;
+    searchItems(query: string, limit?: number): Promise<{
+        model: string | null;
+        id: string;
+        department: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        status: string;
+        description: string | null;
+        assignedTo: string | null;
+        category: string;
+        location: string;
+        serialNumber: string | null;
+        manufacturer: string | null;
+        purchaseDate: Date | null;
+        warrantyExpiry: Date | null;
+        cost: number | null;
+        quantity: number;
+        minQuantity: number | null;
+        maxQuantity: number | null;
+        reorderPoint: number | null;
+        barcode: string | null;
+        condition: string | null;
+        supplier: string | null;
+        notes: string | null;
+    }[]>;
+    bulkUpdateStatus(itemIds: string[], status: string, userId: string): Promise<{
+        message: string;
+    }>;
+    getInventoryStats(): Promise<{
+        totalItems: number;
+        totalValue: number;
+        lowStockCount: number;
+        statusBreakdown: {
+            status: string;
+            count: number;
+        }[];
+    }>;
+}
+//# sourceMappingURL=InventoryService.d.ts.map

@@ -1,0 +1,247 @@
+
+> hospital-inventory-management@1.0.0 dev
+> concurrently "npm run server" "npm run client"
+
+[0] 
+[0] > hospital-inventory-management@1.0.0 server
+[0] > cd backend && npm run dev
+[0] 
+[1] 
+[1] > hospital-inventory-management@1.0.0 client
+[1] > cd frontend && npm start
+[1] 
+[0] 
+[0] > hospital-inventory-backend@1.0.0 dev
+[0] > ts-node-dev --respawn --transpile-only src/index.ts
+[0] 
+[1] 
+[1] > hospital-inventory-frontend@1.0.0 start
+[1] > react-scripts start
+[1] 
+[0] [INFO] 18:07:34 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.9.2, typescript ver. 5.8.3)
+[0] [32minfo[39m: Attempting to use "python3" from PATH for AI module. {"service":"hospital-inventory-api","timestamp":"2025-06-14T18:07:36.077Z"}
+[0] [32minfo[39m: Initializing Python path for AI Service... {"service":"hospital-inventory-api","timestamp":"2025-06-14T18:07:36.080Z"}
+[0] [33mwarn[39m: PYTHON_PATH is set to problematic path /usr/local/python/current. Attempting to use 'python3' from PATH instead. {"service":"hospital-inventory-api","timestamp":"2025-06-14T18:07:36.081Z"}
+[0] [32minfo[39m: Final Python path for AI module: python3 {"service":"hospital-inventory-api","timestamp":"2025-06-14T18:07:36.081Z"}
+[0] [32minfo[39m: Server running on port 3001 {"service":"hospital-inventory-api","timestamp":"2025-06-14T18:07:36.099Z"}
+[0] prisma:info Starting a postgresql pool with 5 connections.
+[0] [32minfo[39m: Database connected successfully {"service":"hospital-inventory-api","timestamp":"2025-06-14T18:07:36.160Z"}
+[1] (node:16951) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+[1] (Use `node --trace-deprecation ...` to show where the warning was created)
+[1] (node:16951) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+[1] Starting the development server...
+[1] 
+[1] Compiled successfully!
+[1] 
+[1] You can now view hospital-inventory-frontend in the browser.
+[1] 
+[1]   Local:            http://localhost:3000
+[1]   On Your Network:  http://10.0.1.51:3000
+[1] 
+[1] Note that the development build is not optimized.
+[1] To create a production build, use npm run build.
+[1] 
+[1] webpack compiled successfully
+[1] Files successfully emitted, waiting for typecheck results...
+[1] Issues checking in progress...
+[1] ERROR in src/pages/AI/AIOverview_with_mock.tsx
+[1] TS1208: 'AIOverview_with_mock.tsx' cannot be compiled under '--isolatedModules' because it is considered a global script file. Add an import, export, or an empty 'export {}' statement to make it a module.
+[1] 
+[1] ERROR in src/store/slices/notificationSlice.ts:122:7
+[1] TS2322: Type 'Socket<DefaultEventsMap, DefaultEventsMap>' is not assignable to type 'WritableDraft<Socket<DefaultEventsMap, DefaultEventsMap>>'.
+[1]   Types of property 'receiveBuffer' are incompatible.
+[1]     Type '(readonly any[])[]' is not assignable to type 'any[][]'.
+[1]       The type 'readonly any[]' is 'readonly' and cannot be assigned to the mutable type 'any[]'.
+[1]     120 |   extraReducers: (builder) => {
+[1]     121 |     builder.addCase(initializeSocket.fulfilled, (state, action) => {
+[1]   > 122 |       state.socket = action.payload;
+[1]         |       ^^^^^^^^^^^^
+[1]     123 |     });
+[1]     124 |   },
+[1]     125 | });
+[1] 
+[0] prisma:query SELECT 1
+[0] prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."username", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role", "public"."users"."department", "public"."users"."isActive", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLogin" FROM "public"."users" WHERE ("public"."users"."email" = $1 AND 1=1) LIMIT $2 OFFSET $3
+[0] prisma:query UPDATE "public"."users" SET "lastLogin" = $1, "updatedAt" = $2 WHERE ("public"."users"."id" = $3 AND 1=1) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."username", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role", "public"."users"."department", "public"."users"."isActive", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLogin"
+[0] prisma:error 
+[0] Invalid `prisma.auditLog.create()` invocation in
+[0] /workspaces/hospital_inventory_project/backend/src/services/AuditService.ts:16:36
+[0] 
+[0]   13 export class AuditService {
+[0]   14   async createLog(data: AuditLogInput) {
+[0]   15     try {
+[0] → 16       return await prisma.auditLog.create({
+[0]              data: {
+[0]                action: "USER_LOGIN",
+[0]                entityType: "USER",
+[0]                entityId: "cmbwhz7e00000htu065zj13fz",
+[0]                userId: "cmbwhz7e00000htu065zj13fz",
+[0]                oldValues: null,
+[0]                newValues: {
+[0]                  lastLogin: new Date("2025-06-14T18:10:07.868Z")
+[0]                },
+[0]            +   resource: String
+[0]              }
+[0]            })
+[0] 
+[0] Argument `resource` is missing.
+[0] Failed to create audit log: PrismaClientValidationError: 
+[0] Invalid `prisma.auditLog.create()` invocation in
+[0] /workspaces/hospital_inventory_project/backend/src/services/AuditService.ts:16:36
+[0] 
+[0]   13 export class AuditService {
+[0]   14   async createLog(data: AuditLogInput) {
+[0]   15     try {
+[0] → 16       return await prisma.auditLog.create({
+[0]              data: {
+[0]                action: "USER_LOGIN",
+[0]                entityType: "USER",
+[0]                entityId: "cmbwhz7e00000htu065zj13fz",
+[0]                userId: "cmbwhz7e00000htu065zj13fz",
+[0]                oldValues: null,
+[0]                newValues: {
+[0]                  lastLogin: new Date("2025-06-14T18:10:07.868Z")
+[0]                },
+[0]            +   resource: String
+[0]              }
+[0]            })
+[0] 
+[0] Argument `resource` is missing.
+[0]     at wn (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:29:1363)
+[0]     at $n.handleRequestError (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:121:6958)
+[0]     at $n.handleAndLogRequestError (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:121:6623)
+[0]     at $n.request (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:121:6307)
+[0]     at l (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:130:9633)
+[0]     at AuditService.createLog (/workspaces/hospital_inventory_project/backend/src/services/AuditService.ts:16:14)
+[0]     at AuthService.login (/workspaces/hospital_inventory_project/backend/src/services/AuthService.ts:122:5)
+[0]     at /workspaces/hospital_inventory_project/backend/src/routes/auth.ts:33:20 {
+[0]   clientVersion: '5.22.0'
+[0] }
+[0] prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."username", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role", "public"."users"."department", "public"."users"."isActive", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLogin" FROM "public"."users" WHERE ("public"."users"."email" = $1 AND 1=1) LIMIT $2 OFFSET $3
+[0] prisma:query UPDATE "public"."users" SET "lastLogin" = $1, "updatedAt" = $2 WHERE ("public"."users"."id" = $3 AND 1=1) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."username", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role", "public"."users"."department", "public"."users"."isActive", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLogin"
+[0] prisma:error 
+[0] Invalid `prisma.auditLog.create()` invocation in
+[0] /workspaces/hospital_inventory_project/backend/src/services/AuditService.ts:16:36
+[0] 
+[0]   13 export class AuditService {
+[0]   14   async createLog(data: AuditLogInput) {
+[0]   15     try {
+[0] → 16       return await prisma.auditLog.create({
+[0]              data: {
+[0]                action: "USER_LOGIN",
+[0]                entityType: "USER",
+[0]                entityId: "cmbwhz7e00000htu065zj13fz",
+[0]                userId: "cmbwhz7e00000htu065zj13fz",
+[0]                oldValues: null,
+[0]                newValues: {
+[0]                  lastLogin: new Date("2025-06-14T18:10:07.986Z")
+[0]                },
+[0]            +   resource: String
+[0]              }
+[0]            })
+[0] 
+[0] Argument `resource` is missing.
+[0] Failed to create audit log: PrismaClientValidationError: 
+[0] Invalid `prisma.auditLog.create()` invocation in
+[0] /workspaces/hospital_inventory_project/backend/src/services/AuditService.ts:16:36
+[0] 
+[0]   13 export class AuditService {
+[0]   14   async createLog(data: AuditLogInput) {
+[0]   15     try {
+[0] → 16       return await prisma.auditLog.create({
+[0]              data: {
+[0]                action: "USER_LOGIN",
+[0]                entityType: "USER",
+[0]                entityId: "cmbwhz7e00000htu065zj13fz",
+[0]                userId: "cmbwhz7e00000htu065zj13fz",
+[0]                oldValues: null,
+[0]                newValues: {
+[0]                  lastLogin: new Date("2025-06-14T18:10:07.986Z")
+[0]                },
+[0]            +   resource: String
+[0]              }
+[0]            })
+[0] 
+[0] Argument `resource` is missing.
+[0]     at wn (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:29:1363)
+[0]     at $n.handleRequestError (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:121:6958)
+[0]     at $n.handleAndLogRequestError (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:121:6623)
+[0]     at $n.request (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:121:6307)
+[0]     at l (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:130:9633)
+[0]     at AuditService.createLog (/workspaces/hospital_inventory_project/backend/src/services/AuditService.ts:16:14)
+[0]     at AuthService.login (/workspaces/hospital_inventory_project/backend/src/services/AuthService.ts:122:5)
+[0]     at /workspaces/hospital_inventory_project/backend/src/routes/auth.ts:33:20 {
+[0]   clientVersion: '5.22.0'
+[0] }
+[0] prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."username", "public"."users"."role", "public"."users"."isActive" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+[0] prisma:query UPDATE "public"."users" SET "lastLogin" = $1, "updatedAt" = $2 WHERE ("public"."users"."id" = $3 AND 1=1) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."username", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role", "public"."users"."department", "public"."users"."isActive", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLogin"
+[0] [31merror[39m: AI health check failed: AI module exited with code 1: 2025-06-14 18:10:09.483900: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+[0] 2025-06-14 18:10:09.487085: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.
+[0] 2025-06-14 18:10:09.495940: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+[0] WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[0] E0000 00:00:1749924609.510186   19029 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+[0] E0000 00:00:1749924609.514458   19029 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+[0] W0000 00:00:1749924609.526498   19029 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+[0] W0000 00:00:1749924609.526519   19029 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+[0] W0000 00:00:1749924609.526523   19029 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+[0] W0000 00:00:1749924609.526526   19029 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+[0] 2025-06-14 18:10:09.530202: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+[0] To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+[0]  {"service":"hospital-inventory-api","stack":"Error: AI module exited with code 1: 2025-06-14 18:10:09.483900: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n2025-06-14 18:10:09.487085: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:32] Could not find cuda drivers on your machine, GPU will not be used.\n2025-06-14 18:10:09.495940: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered\nWARNING: All log messages before absl::InitializeLog() is called are written to STDERR\nE0000 00:00:1749924609.510186   19029 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered\nE0000 00:00:1749924609.514458   19029 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered\nW0000 00:00:1749924609.526498   19029 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.\nW0000 00:00:1749924609.526519   19029 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.\nW0000 00:00:1749924609.526523   19029 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.\nW0000 00:00:1749924609.526526   19029 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.\n2025-06-14 18:10:09.530202: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.\nTo enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.\n\n    at ChildProcess.<anonymous> (/workspaces/hospital_inventory_project/backend/src/services/AIService.ts:629:20)\n    at ChildProcess.emit (node:events:524:28)\n    at maybeClose (node:internal/child_process:1104:16)\n    at Process.ChildProcess._handle.onexit (node:internal/child_process:304:5)","timestamp":"2025-06-14T18:10:12.232Z"}
+[0] prisma:query SELECT 1
+[0] prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."username", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role", "public"."users"."department", "public"."users"."isActive", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLogin" FROM "public"."users" WHERE ("public"."users"."email" = $1 AND 1=1) LIMIT $2 OFFSET $3
+[0] prisma:query UPDATE "public"."users" SET "lastLogin" = $1, "updatedAt" = $2 WHERE ("public"."users"."id" = $3 AND 1=1) RETURNING "public"."users"."id", "public"."users"."email", "public"."users"."username", "public"."users"."password", "public"."users"."firstName", "public"."users"."lastName", "public"."users"."role", "public"."users"."department", "public"."users"."isActive", "public"."users"."createdAt", "public"."users"."updatedAt", "public"."users"."lastLogin"
+[0] prisma:error 
+[0] Invalid `prisma.auditLog.create()` invocation in
+[0] /workspaces/hospital_inventory_project/backend/src/services/AuditService.ts:16:36
+[0] 
+[0]   13 export class AuditService {
+[0]   14   async createLog(data: AuditLogInput) {
+[0]   15     try {
+[0] → 16       return await prisma.auditLog.create({
+[0]              data: {
+[0]                action: "USER_LOGIN",
+[0]                entityType: "USER",
+[0]                entityId: "cmbwhz7e00000htu065zj13fz",
+[0]                userId: "cmbwhz7e00000htu065zj13fz",
+[0]                oldValues: null,
+[0]                newValues: {
+[0]                  lastLogin: new Date("2025-06-14T18:10:59.210Z")
+[0]                },
+[0]            +   resource: String
+[0]              }
+[0]            })
+[0] 
+[0] Argument `resource` is missing.
+[0] Failed to create audit log: PrismaClientValidationError: 
+[0] Invalid `prisma.auditLog.create()` invocation in
+[0] /workspaces/hospital_inventory_project/backend/src/services/AuditService.ts:16:36
+[0] 
+[0]   13 export class AuditService {
+[0]   14   async createLog(data: AuditLogInput) {
+[0]   15     try {
+[0] → 16       return await prisma.auditLog.create({
+[0]              data: {
+[0]                action: "USER_LOGIN",
+[0]                entityType: "USER",
+[0]                entityId: "cmbwhz7e00000htu065zj13fz",
+[0]                userId: "cmbwhz7e00000htu065zj13fz",
+[0]                oldValues: null,
+[0]                newValues: {
+[0]                  lastLogin: new Date("2025-06-14T18:10:59.210Z")
+[0]                },
+[0]            +   resource: String
+[0]              }
+[0]            })
+[0] 
+[0] Argument `resource` is missing.
+[0]     at wn (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:29:1363)
+[0]     at $n.handleRequestError (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:121:6958)
+[0]     at $n.handleAndLogRequestError (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:121:6623)
+[0]     at $n.request (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:121:6307)
+[0]     at l (/workspaces/hospital_inventory_project/backend/node_modules/@prisma/client/runtime/library.js:130:9633)
+[0]     at AuditService.createLog (/workspaces/hospital_inventory_project/backend/src/services/AuditService.ts:16:14)
+[0]     at AuthService.login (/workspaces/hospital_inventory_project/backend/src/services/AuthService.ts:122:5)
+[0]     at /workspaces/hospital_inventory_project/backend/src/routes/auth.ts:33:20 {
+[0]   clientVersion: '5.22.0'
+[0] }

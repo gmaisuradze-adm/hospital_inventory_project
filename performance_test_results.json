@@ -1,0 +1,33 @@
+{
+  "timestamp": "2025-06-14T18:28:48.310925",
+  "results": {
+    "100": {
+      "data_generation_time": 0.2349991798400879,
+      "abc_analysis_time": 0.00011658668518066406,
+      "abc_analysis_success": true,
+      "individual_optimization_time": 0.008758649826049805,
+      "optimization_success_rate": 1.0
+    },
+    "500": {
+      "data_generation_time": 1.1465959548950195,
+      "abc_analysis_time": 0.00048279762268066406,
+      "abc_analysis_success": true,
+      "individual_optimization_time": 0.0006062698364257813,
+      "optimization_success_rate": 1.0
+    },
+    "1000": {
+      "data_generation_time": 2.17633056640625,
+      "abc_analysis_time": 0.0015404224395751953,
+      "abc_analysis_success": true,
+      "individual_optimization_time": 0.0006046342849731445,
+      "optimization_success_rate": 1.0
+    },
+    "2000": {
+      "data_generation_time": 4.406972408294678,
+      "abc_analysis_time": 0.004247903823852539,
+      "abc_analysis_success": true,
+      "individual_optimization_time": 0.0006091928482055664,
+      "optimization_success_rate": 1.0
+    }
+  }
+}

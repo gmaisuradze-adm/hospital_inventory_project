@@ -1,0 +1,33 @@
+2025-06-14 16:10:08,040 - src.models.demand_forecaster - INFO - DemandForecaster initialized
+2025-06-14 16:10:08,040 - src.models.inventory_optimizer - INFO - Initialized InventoryOptimizer with service level: 0.95
+2025-06-14 16:10:08,040 - src.data.data_preprocessor - INFO - DataPreprocessor initialized
+2025-06-14 16:10:12,193 - src.models.demand_forecaster - INFO - DemandForecaster initialized
+2025-06-14 16:10:12,194 - src.models.inventory_optimizer - INFO - Initialized InventoryOptimizer with service level: 0.95
+2025-06-14 16:10:12,194 - src.data.data_preprocessor - INFO - DataPreprocessor initialized
+2025-06-14 16:10:12,197 - src.models.demand_forecaster - INFO - Training forecasting models for 1 items
+2025-06-14 16:10:12,197 - src.models.demand_forecaster - WARNING - Insufficient data for item TEST_SURGICAL_GLOVES_001: 7 records
+2025-06-14 16:10:12,197 - src.models.demand_forecaster - INFO - Model training completed
+2025-06-14 16:10:12,197 - __main__ - WARNING - AI forecaster failed: DemandForecaster.predict() got an unexpected keyword argument 'model_type', using fallback
+2025-06-14 16:10:16,380 - src.models.demand_forecaster - INFO - DemandForecaster initialized
+2025-06-14 16:10:16,380 - src.models.inventory_optimizer - INFO - Initialized InventoryOptimizer with service level: 0.95
+2025-06-14 16:10:16,380 - src.data.data_preprocessor - INFO - DataPreprocessor initialized
+2025-06-14 16:10:16,383 - __main__ - WARNING - Forecasting failed for item TEST_SURGICAL_MASKS_001: Models must be fitted before prediction, using fallback
+2025-06-14 16:10:16,384 - src.models.inventory_optimizer - ERROR - Error in calculate_optimal_levels for item TEST_SURGICAL_MASKS_001: 'numpy.float64' object has no attribute 'empty'
+Traceback (most recent call last):
+  File "/workspaces/hospital_inventory_project/ai-module/src/models/inventory_optimizer.py", line 186, in calculate_optimal_levels
+    if demand_forecast is None or demand_forecast.empty:
+                                  ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'numpy.float64' object has no attribute 'empty'
+
+2025-06-14 16:30:25,724 - src.models.demand_forecaster - INFO - DemandForecaster initialized
+2025-06-14 16:30:25,724 - src.models.inventory_optimizer - INFO - Initialized InventoryOptimizer with service level: 0.95
+2025-06-14 16:30:25,725 - src.data.data_preprocessor - INFO - DataPreprocessor initialized
+2025-06-14 17:54:42,678 - src.models.demand_forecaster - INFO - DemandForecaster initialized
+2025-06-14 17:54:42,679 - src.models.inventory_optimizer - INFO - Initialized InventoryOptimizer with service level: 0.95
+2025-06-14 17:54:42,679 - src.data.data_preprocessor - INFO - DataPreprocessor initialized
+2025-06-14 18:09:51,404 - src.models.demand_forecaster - INFO - DemandForecaster initialized
+2025-06-14 18:09:51,404 - src.models.inventory_optimizer - INFO - Initialized InventoryOptimizer with service level: 0.95
+2025-06-14 18:09:51,404 - src.data.data_preprocessor - INFO - DataPreprocessor initialized
+2025-06-14 18:18:22,204 - src.models.demand_forecaster - INFO - DemandForecaster initialized
+2025-06-14 18:18:22,204 - src.models.inventory_optimizer - INFO - Initialized InventoryOptimizer with service level: 0.95
+2025-06-14 18:18:22,204 - src.data.data_preprocessor - INFO - DataPreprocessor initialized
